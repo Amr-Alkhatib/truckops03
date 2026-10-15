@@ -482,7 +482,7 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
     }
   }
   const bertha = excluded.find((e) => e.reason.includes("400V"));
-  if (bertha && !blockers.length === false) suggestions.push(`A private campus or 400 V power would allow ${bertha.name}.`);
+  if (bertha && blockers.length) suggestions.push(`A private campus or 400 V power would allow ${bertha.name}.`);
   if (blockers.length && !opts.noSuggest && !opts.forceTruckIds) {
     const found: string[] = [];
     for (let k = 1; k <= 14 && found.length < 3; k++) {

@@ -72,9 +72,12 @@ describe("engine", () => {
     const q = buildQuote(ev({ halal: 3 }), ctx());
     expect(q.trucks.map((t) => t.id)).toContain("CurryUp");
   });
-  it("blocks unknown town on public ground", () => {
+  it("unknown town on public ground → quote produced, Permit check", () => {
     const q = buildQuote(ev({ venue_type: "public_ground", town: "Esslingen" }), ctx());
-    expect(q.needsReview).toBe(true);
+    expect(q.ok).toBe(true);
+    expect(q.townUnknown).toBe(true);
+    expect(q.permitCheck).toBe(true);
+    expect(q.lines.find((l) => l.key === "permit")?.tbc).toBe(true);
   });
   it("permit at 0% VAT", () => {
     const q = buildQuote(ev({ venue_type: "public_ground" }), ctx());
