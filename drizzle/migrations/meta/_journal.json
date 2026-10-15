@@ -71,6 +71,13 @@
       "when": 1792077431888,
       "tag": "0009_changelog_packages_planner_links",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792077445975,
+      "tag": "0010_planner_bookings_no_approval_token",
+      "breakpoints": true
     }
   ]
 }
