@@ -78,6 +78,34 @@
       "when": 1792077445975,
       "tag": "0010_planner_bookings_no_approval_token",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792078066520,
+      "tag": "0011_yards_multi_depot",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792078092816,
+      "tag": "0012_compliance_doc_types_onboarding",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792078374961,
+      "tag": "0013_commit_plan_yard_distances",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792078482082,
+      "tag": "0014_vegan_implies_vegetarian",
+      "breakpoints": true
     }
   ]
 }

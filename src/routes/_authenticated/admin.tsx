@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
-import { BadgeEuro, CalendarDays, ClipboardList, FileCheck2, LayoutDashboard, Map, NotebookText, Package, History, Scale, Truck, Users } from "lucide-react";
+import { BadgeEuro, CalendarDays, ClipboardList, FileCheck2, LayoutDashboard, Map, NotebookText, Package, History, Warehouse, Scale, Truck, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -18,6 +18,7 @@ const NAV = [
   { to: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/admin/bookings", label: "Bookings", icon: ClipboardList },
   { to: "/admin/fleet", label: "Fleet", icon: Truck },
+  { to: "/admin/yards", label: "Yards", icon: Warehouse },
   { to: "/admin/rules", label: "Rules", icon: Scale },
   { to: "/admin/pricing", label: "Pricing", icon: BadgeEuro },
   { to: "/admin/towns", label: "Towns & permits", icon: Map },

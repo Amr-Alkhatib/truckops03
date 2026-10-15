@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useReplan } from "@/hooks/use-replan";
 import { CrudTable } from "@/components/admin/CrudTable";
 import { useConfig } from "@/components/admin/ConfigForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +30,7 @@ function CompliancePage() {
       <p className="text-sm text-muted-foreground">
         Required company documents that expire before an event block the booking. Truck documents (TÜV, food registration) remove that truck from assignment. Crew documents (§43 IfSG refresher every 2 years) block that person. Corporate catering booked in advance is a <em>stehendes Gewerbe</em>; the Reisegewerbekarte (§55 GewO) is only needed for bookings flagged “sales to the public without prior order”.
       </p>
+      <Onboarding />
       <CrudTable
         table="compliance_docs" title="Documents" order="doc_type" defaults={{ doc_type: "other", required: true, notes: "", status: "unverified", legal_basis: "" }}
         cols={[
@@ -38,6 +42,10 @@ function CompliancePage() {
             { value: "tuev", label: "TÜV inspection" },
             { value: "liability_insurance", label: "Liability insurance" },
             { value: "gaststaetten_gestattung", label: "Gestattung §12 GastG" },
+            { value: "vehicle_registration", label: "Vehicle keeper registration" },
+            { value: "vehicle_insurance", label: "Vehicle insurance" },
+            { value: "betriebsuebergang", label: "Staff transfer §613a BGB" },
+            { value: "sondernutzung", label: "Sondernutzungserlaubnis" },
             { value: "other", label: "Other" },
           ] },
           { key: "label", label: "Label", type: "text" },
@@ -46,6 +54,9 @@ function CompliancePage() {
           { key: "expires_on", label: "Expires / due", type: "date", render: (r) => expiryBadge(r.expires_on) },
           { key: "renew_every_months", label: "Renew every (months)", type: "number", nullable: true, hideInTable: true },
           { key: "required", label: "Required", type: "bool" },
+          { key: "onboarding", label: "Onboarding group", type: "text", hideInTable: true },
+          { key: "done", label: "Onboarding item done", type: "bool", hideInTable: true },
+          { key: "due_on", label: "Due", type: "date", hideInTable: true },
           { key: "legal_basis", label: "Legal basis", type: "text", hideInTable: true },
           { key: "source_url", label: "Source", type: "text", render: (r) => (r.source_url ? <a className="text-primary underline" href={r.source_url} target="_blank" rel="noreferrer">{r.source_title || "link"}</a> : "—") },
           { key: "source_title", label: "Source title", type: "text", hideInTable: true },
@@ -126,5 +137,66 @@ function WorkingTime() {
       </table>
       <p className="mt-2 text-xs text-muted-foreground">Each listed day needs a replacement rest day within 2 weeks for every crew member who worked it.</p>
     </div>
+  );
+}
+
+function Onboarding() {
+  const qc = useQueryClient();
+  const replan = useReplan();
+  const q = useQuery({
+    queryKey: ["onboarding-items"],
+    queryFn: async () => (await supabase.from("compliance_docs").select("*, trucks(name)").not("onboarding", "is", null).order("due_on")).data ?? [],
+  });
+  const items = q.data ?? [];
+  if (!items.length) return null;
+  const groups = [...new Set(items.map((i) => i.onboarding as string))];
+  const toggle = async (id: string, done: boolean) => {
+    const { error } = await supabase.from("compliance_docs").update({ done }).eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["onboarding-items"] });
+    qc.invalidateQueries({ queryKey: ["engine-static"] });
+    replan("onboarding item updated");
+  };
+  const upload = async (id: string, file: File) => {
+    const path = `onboarding/${id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+    const up = await supabase.storage.from("permits").upload(path, file);
+    if (up.error) return toast.error(up.error.message);
+    await supabase.from("compliance_docs").update({ file_path: path }).eq("id", id);
+    toast.success("Document uploaded");
+    qc.invalidateQueries({ queryKey: ["onboarding-items"] });
+  };
+  const open = async (path: string) => {
+    const { data, error } = await supabase.storage.from("permits").createSignedUrl(path, 300);
+    if (error) return toast.error(error.message);
+    window.open(data.signedUrl, "_blank");
+  };
+  return (
+    <>
+      {groups.map((g) => (
+        <div key={g} className="glass rounded-3xl p-4 sm:p-6">
+          <h2 className="mb-1 text-xl font-semibold capitalize">{g} onboarding</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Trucks with open required items show as “onboarding”: they can be quoted, but bookings with them can't be confirmed until their items are done.</p>
+          <ul className="space-y-2 text-sm">
+            {items.filter((i) => i.onboarding === g).map((i) => (
+              <li key={i.id} className="flex flex-wrap items-start gap-3 rounded-xl border p-3">
+                <input type="checkbox" className="mt-1" checked={i.done} onChange={(e) => toggle(i.id, e.target.checked)} />
+                <div className="min-w-0 flex-1">
+                  <p className={i.done ? "line-through opacity-60" : "font-medium"}>{i.label}{!i.required && <span className="ml-1 text-xs font-normal text-muted-foreground">(info)</span>}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {i.legal_basis}{i.source_url && <> · <a className="text-primary underline" href={i.source_url} target="_blank" rel="noreferrer">source</a></>}
+                    {i.due_on && ` · due ${formatDateDE(i.due_on)}`}{i.notes && ` · ${i.notes}`}
+                  </p>
+                </div>
+                {i.file_path ? <Button size="sm" variant="outline" onClick={() => open(i.file_path!)}>Open document</Button> : null}
+                <label className="cursor-pointer text-xs text-primary hover:underline">
+                  {i.file_path ? "Replace" : "Upload"}
+                  <input type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(i.id, e.target.files[0])} />
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </>
   );
 }

@@ -25,7 +25,6 @@ export const Route = createFileRoute("/_authenticated/admin/rules")({
         { path: "crew_max_hours", label: "Crew max hours per event (ArbZG §4: 30-min break after 6 h)", type: "number" },
         { path: "second_crew_enabled", label: "Allow longer events with a relief crew shift", type: "bool" },
         { path: "second_crew_fee_per_truck", label: "Second crew fee per vehicle (€ net)", type: "number" },
-        { path: "relief_crews_per_day", label: "Relief crews available per day", type: "number" },
         { path: "lock_days", label: "Lock bookings this many days before the event", type: "number" },
         { path: "vegan_threshold_pct", label: "Vegan share that requires a vegan truck (%)", type: "number" },
       ]} />

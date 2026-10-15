@@ -25,7 +25,10 @@ export interface EngineConfig {
   vat: Record<VatCategory, number>;
   approval_threshold: number;
   approval_basis: "net" | "gross";
-  depot: { label: string; lat: number; lon: number };
+  /** DEPRECATED single depot — replaced by yards; used only when no yards are loaded */
+  depot?: { label: string; lat: number; lon: number };
+  /** charge travel for add-on vehicles (Espresso Express) like any vehicle */
+  charge_addon_travel?: boolean;
   afterwork_package: { name: string; start: string; end: string };
   /** relief crews available per day for second shifts (events > crew_max_hours) */
   relief_crews_per_day?: number;
@@ -76,6 +79,29 @@ export interface Truck {
   needs_400v: boolean;
   is_addon: boolean;
   status: "active" | "retired";
+  /** informational; vegan implies vegetarian. Never counts toward the vegan rule. */
+  vegetarian?: boolean;
+  /** availability window (e.g. trucks joining from a takeover) */
+  available_from?: string | null;
+  available_to?: string | null;
+}
+
+export interface Yard {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  active_from: string | null;
+  status: "active" | "planned" | "closed";
+  /** relief crews available per day at this yard (second shifts) */
+  relief_crews: number;
+}
+
+export interface TruckYard {
+  truck_id: string;
+  yard_id: string;
+  valid_from: string;
+  valid_to: string | null;
 }
 
 export interface Blackout {
@@ -154,7 +180,10 @@ export interface EventInput {
   gluten_free: number;
   halal: number;
   espresso: boolean;
+  /** legacy single-depot distance (= nearest yard when yards are used) */
   distance_km: number;
+  /** road km from each yard (yard id → km, null = unknown) */
+  yard_km?: Record<string, number | null>;
   booking_id?: string;
   sales_to_public?: boolean;
   alcohol_served?: boolean;
@@ -178,6 +207,10 @@ export interface EngineContext {
   bookings?: DayBooking[];
   /** past usage count per truck, for balanced utilisation */
   usage?: Record<string, number>;
+  yards?: Yard[];
+  truckYards?: TruckYard[];
+  /** open onboarding items per truck — truck can be quoted but not confirmed */
+  onboardingOpen?: { truck_id: string; label: string }[];
 }
 
 export interface Issue {
@@ -218,11 +251,14 @@ export interface Quote {
   totalNet: number;
   totalVat: number;
   totalGross: number;
-  trucks: Pick<Truck, "id" | "name" | "cuisine">[];
+  trucks: (Pick<Truck, "id" | "name" | "cuisine"> & { vegan?: boolean; vegetarian?: boolean })[];
   espressoTruckId: string | null;
   durationHours: number;
   isWeekend: boolean;
+  /** total travel (sum of per-vehicle travel lines) */
   zoneFee: number | null;
+  /** per-vehicle trip from its own yard */
+  travel: { truck_id: string; truck: string; yard: string | null; km: number; fee: number }[];
   permitRequired: boolean;
   needsApproval: boolean;
   needsReview: boolean;
