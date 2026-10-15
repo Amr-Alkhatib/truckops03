@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useReplan } from "@/hooks/use-replan";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ export async function saveConfig(cfg: any, qc: ReturnType<typeof useQueryClient>
 
 export function ConfigForm({ title, fields, children }: { title: string; fields: CfgField[]; children?: (cfg: any, set: (c: any) => void) => React.ReactNode }) {
   const qc = useQueryClient();
+  const replan = useReplan();
   const q = useConfig();
   const [cfg, setCfg] = useState<any>(null);
   useEffect(() => { if (q.data) setCfg(q.data); }, [q.data]);
@@ -63,7 +65,7 @@ export function ConfigForm({ title, fields, children }: { title: string; fields:
         ))}
       </div>
       {children?.(cfg, setCfg)}
-      <Button variant="hero" className="mt-6" onClick={() => saveConfig(cfg, qc)}>Save</Button>
+      <Button variant="hero" className="mt-6" onClick={async () => { if (await saveConfig(cfg, qc)) replan(`${title} changed`); }}>Save</Button>
     </div>
   );
 }
