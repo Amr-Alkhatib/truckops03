@@ -20,7 +20,8 @@ import { RouteMap } from "@/components/RouteMap";
 import { useDateData, useRoute, useStaticData } from "@/hooks/use-engine";
 import { bookingSchema } from "@/lib/booking-schema";
 import { submitBooking, type SubmitResult } from "@/lib/booking.functions";
-import { buildQuote, eur, formatDateDE, makeContext as _m } from "@/lib/engine-client";
+import { buildQuote, eur, formatDateDE } from "@/lib/engine";
+import { makeContext as _m } from "@/lib/data";
 import { downloadQuotePdf } from "@/lib/pdf";
 
 export const Route = createFileRoute("/_authenticated/book")({
