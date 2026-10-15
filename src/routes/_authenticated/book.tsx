@@ -57,12 +57,17 @@ type Form = {
   contact_mobile: string;
   approver_name: string;
   approver_email: string;
+  county: string;
+  state: string;
+  sales_to_public: boolean;
+  alcohol_served: boolean;
 };
 
 const EMPTY: Form = {
   package: "", event_date: "", start_time: "", end_time: "", venue_name: "", address: "", town: "", lat: null, lon: null,
   venue_type: "", has_400v: null, no_clearance_limit: false, clearance_m: "", space_m2: "", guests: "", vegan: "0", gluten_free: "0", halal: "0",
   espresso: false, company_name: "", billing_address: "", po_number: "", contact_name: "", contact_mobile: "", approver_name: "", approver_email: "",
+  county: "", state: "", sales_to_public: false, alcohol_served: false,
 };
 
 const STEPS = ["Package", "Date & time", "Venue", "Guests & diet", "Add-ons", "Company", "Review"];
@@ -71,7 +76,7 @@ const STEP_FIELDS: string[][] = [
   ["event_date", "start_time", "end_time"],
   ["venue_name", "address", "town", "lat", "lon", "venue_type", "has_400v", "clearance_m", "space_m2"],
   ["guests", "vegan", "gluten_free", "halal"],
-  ["espresso"],
+  ["espresso", "sales_to_public", "alcohol_served"],
   ["company_name", "billing_address", "po_number", "contact_name", "contact_mobile", "approver_name", "approver_email"],
   [],
 ];
@@ -168,6 +173,8 @@ function BookWizard() {
         halal: p.halal ?? 0,
         espresso: f.espresso,
         distance_km: routeQ.data.km,
+        sales_to_public: f.sales_to_public,
+        alcohol_served: f.alcohol_served,
       },
       _m(staticQ.data, dateQ.data),
     );
@@ -218,7 +225,7 @@ function BookWizard() {
   const applyPreset = (p: any) => {
     setF((x) => ({
       ...x,
-      venue_name: p.venue_name, address: p.address, town: p.town, lat: p.lat, lon: p.lon, venue_type: p.venue_type, has_400v: p.has_400v,
+      venue_name: p.venue_name, address: p.address, town: p.town, county: "", state: "", lat: p.lat, lon: p.lon, venue_type: p.venue_type, has_400v: p.has_400v,
       no_clearance_limit: p.clearance_m == null, clearance_m: p.clearance_m == null ? "" : String(p.clearance_m), space_m2: String(p.space_m2),
       start_time: x.package === "afterwork" ? x.start_time : p.start_time.slice(0, 5), end_time: x.package === "afterwork" ? x.end_time : p.end_time.slice(0, 5),
       guests: String(p.guests), vegan: String(p.vegan), gluten_free: String(p.gluten_free), halal: String(p.halal),
@@ -309,7 +316,7 @@ function BookWizard() {
                 <>
                   <Field label="Venue name" error={errors.venue_name}><Input value={f.venue_name} onChange={(e) => set("venue_name", e.target.value)} placeholder="e.g. Campus Vaihingen, Building 3" /></Field>
                   <Field label="Venue address" error={errors.address || errors.town}>
-                    <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town }))} />
+                    <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "", county: "", state: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town, county: r.county, state: r.state }))} />
                   </Field>
                   {cfg && (
                     <div className="space-y-2">
