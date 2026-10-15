@@ -1,0 +1,161 @@
+// Pure data types for the TruckOps pricing & rules engine.
+// Every number used by the engine comes from these DB-driven structures.
+
+export type LineKey = "food" | "weekend" | "espresso" | "travel" | "generator" | "crew" | "permit";
+export type VatCategory = "food" | "beverage" | "services" | "permit";
+
+export interface TravelZone {
+  max_km: number;
+  fee: number;
+}
+
+export interface EngineConfig {
+  per_guest_price: number;
+  min_spend_per_truck: number;
+  weekend_surcharge_pct: number;
+  weekend_applies_to: string[]; // line keys: food, crew, travel, generator, espresso
+  travel_zones: TravelZone[];
+  max_distance_km: number;
+  generator_fee: number;
+  espresso_price: number;
+  crew_max_hours: number;
+  second_crew_enabled: boolean;
+  second_crew_fee_per_truck: number;
+  vegan_threshold_pct: number;
+  vat: Record<VatCategory, number>;
+  approval_threshold: number;
+  approval_basis: "net" | "gross";
+  depot: { label: string; lat: number; lon: number };
+  afterwork_package: { name: string; start: string; end: string };
+}
+
+export interface Truck {
+  id: string;
+  name: string;
+  cuisine: string;
+  max_guests: number;
+  vegan: boolean;
+  gluten_free: boolean;
+  halal: boolean;
+  height_m: number;
+  footprint_m2: number;
+  needs_400v: boolean;
+  is_addon: boolean;
+  status: "active" | "retired";
+}
+
+export interface Blackout {
+  truck_id: string;
+  start_date: string | null;
+  end_date: string | null;
+  recurring_month: number | null;
+  reason: string;
+}
+
+export type PairRuleType =
+  | "never_same_day"
+  | "never_same_event"
+  | "max_one_of_group_on_weekend_day"
+  | "allowed_together";
+
+export interface PairRule {
+  rule_type: PairRuleType;
+  truck_ids: string[];
+  description: string;
+  active: boolean;
+}
+
+export interface Town {
+  name: string;
+  permit_name: string;
+  issuing_authority: string;
+  fee_model: "flat" | "per_truck" | "per_m2";
+  fee_amount: number;
+  lead_time_weeks: number;
+  max_trucks: number;
+  generators_allowed: boolean;
+  quiet_hours_start: string | null;
+  quiet_hours_mode: "warn" | "block";
+  notes: string;
+  verified_on: string | null;
+}
+
+export interface ComplianceItem {
+  doc_type: string;
+  label: string;
+  truck_id: string | null;
+  crew_member: string | null;
+  expires_on: string | null;
+  expired: boolean;
+}
+
+export interface EventInput {
+  package: string;
+  event_date: string; // YYYY-MM-DD
+  start_time: string; // HH:MM
+  end_time: string; // HH:MM (may be past midnight)
+  venue_type: "public_ground" | "private_campus";
+  town: string;
+  has_400v: boolean;
+  clearance_m: number | null;
+  space_m2: number;
+  guests: number;
+  vegan: number;
+  gluten_free: number;
+  halal: number;
+  espresso: boolean;
+  distance_km: number;
+}
+
+export interface EngineContext {
+  config: EngineConfig;
+  trucks: Truck[];
+  blackouts: Blackout[];
+  rules: PairRule[];
+  towns: Town[];
+  /** truck ids already booked on the event date (other bookings) */
+  occupiedTruckIds: string[];
+  compliance: ComplianceItem[];
+  today: string; // YYYY-MM-DD
+}
+
+export interface Issue {
+  code: string;
+  message: string;
+  hint?: string;
+}
+
+export interface QuoteLine {
+  key: LineKey;
+  label: string;
+  net: number;
+  vatRate: number;
+  category: VatCategory;
+}
+
+export interface VatGroup {
+  rate: number;
+  net: number;
+  vat: number;
+}
+
+export interface Quote {
+  ok: boolean;
+  blockers: Issue[];
+  warnings: Issue[];
+  notes: string[];
+  lines: QuoteLine[];
+  vat: VatGroup[];
+  totalNet: number;
+  totalVat: number;
+  totalGross: number;
+  trucks: Pick<Truck, "id" | "name" | "cuisine">[];
+  espressoTruckId: string | null;
+  durationHours: number;
+  isWeekend: boolean;
+  zoneFee: number | null;
+  permitRequired: boolean;
+  needsApproval: boolean;
+  needsReview: boolean;
+  excluded: { name: string; reason: string }[];
+}
