@@ -99,6 +99,13 @@
       "when": 1792078374961,
       "tag": "0013_commit_plan_yard_distances",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792078482082,
+      "tag": "0014_vegan_implies_vegetarian",
+      "breakpoints": true
     }
   ]
 }
