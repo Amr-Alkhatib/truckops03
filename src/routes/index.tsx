@@ -54,7 +54,7 @@ function Index() {
               <Button asChild variant="hero" size="lg" className="h-12 px-7 text-base">
                 <Link to="/book">Get an instant quote <ArrowRight /></Link>
               </Button>
-              <Button asChild variant="glass" size="lg" className="h-12 px-7 text-base text-ink-foreground">
+              <Button asChild variant="glass" size="lg" className="h-12 px-7 text-base">
                 <Link to="/login">Planner sign in</Link>
               </Button>
             </div>
