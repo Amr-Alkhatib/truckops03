@@ -52,7 +52,7 @@ function Index() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="hero" size="lg" className="h-12 px-7 text-base">
-                <Link to="/book">Get an instant quote <ArrowRight /></Link>
+                <Link to="/book">{t("Get an instant quote")} <ArrowRight /></Link>
               </Button>
               <Button asChild variant="glass" size="lg" className="h-12 px-7 text-base">
                 <Link to="/login">Planner sign in</Link>
@@ -63,16 +63,16 @@ function Index() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="glass mt-12 w-full max-w-sm rounded-3xl p-6 lg:mt-0">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1 rounded-full bg-gradient-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                <Sparkles className="size-3" /> Best-seller
+                <Sparkles className="size-3" /> {t("Best-seller")}
               </span>
               <Clock className="size-4 text-muted-foreground" />
             </div>
-            <h2 className="mt-4 text-3xl font-semibold">{cfg?.afterwork_package.name ?? "Afterwork Party"}</h2>
+            <h2 className="mt-4 text-3xl font-semibold">{best?.name ?? "Afterwork Party"}</h2>
             {isLoading ? (
               <Skeleton className="mt-2 h-5 w-40" />
             ) : (
               <p className="mt-1 text-muted-foreground">
-                {cfg?.afterwork_package.start}–{cfg?.afterwork_package.end} · from {eur(cfg?.per_guest_price ?? 0)} net / guest
+                {best?.start_time.slice(0, 5)}–{best?.end_time.slice(0, 5)} · from {eur(cfg?.per_guest_price ?? 0)} net / guest
               </p>
             )}
             <ul className="mt-5 space-y-2 text-sm">
@@ -81,7 +81,7 @@ function Index() {
               <li className="flex gap-2"><ShieldCheck className="size-4 text-primary" /> Fixed road distance — no surprises</li>
             </ul>
             <Button asChild variant="hero" className="mt-6 w-full">
-              <Link to="/book" search={{ package: "afterwork" }}>Book the Afterwork Party</Link>
+              <Link to="/book" search={{ package: best?.slug ?? "afterwork" }}>{t("Book the Afterwork Party")}</Link>
             </Button>
           </motion.div>
         </div>
