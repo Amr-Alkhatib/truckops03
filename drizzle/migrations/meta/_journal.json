@@ -64,6 +64,13 @@
       "when": 1792075839516,
       "tag": "0008_commit_plan_empty_trucks",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792077431888,
+      "tag": "0009_changelog_packages_planner_links",
+      "breakpoints": true
     }
   ]
 }
