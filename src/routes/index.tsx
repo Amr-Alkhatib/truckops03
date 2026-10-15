@@ -1,3 +1,5 @@
+import { useI18n } from "@/lib/i18n";
+import { usePackages } from "@/hooks/use-packages";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -24,6 +26,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { t } = useI18n();
+  const pk = usePackages();
+  const best = pk.data?.find((p) => p.bestseller) ?? pk.data?.[0];
   const { data: cfg, isLoading } = useQuery({
     queryKey: ["public-config"],
     queryFn: async () => {
