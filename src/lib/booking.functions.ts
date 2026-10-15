@@ -20,7 +20,21 @@ const hex = (n: number) => {
 export const submitBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => bookingSchema.parse(d))
-  .handler(async ({ data, context }): Promise<SubmitResult> => {
+  .handler(async ({ data, context }): Promise<SubmitResult> =>
+    doSubmit(data, context.userId, (context.claims as any)?.email ?? "planner", null));
+
+/** Planner token link (no account): the booking is owned by the link's creator. */
+export const submitBookingByToken = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ token: z.string().min(32).max(128), booking: bookingSchema }).parse(d))
+  .handler(async ({ data }): Promise<SubmitResult> => {
+    const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+    const { data: link } = await admin.from("planner_links").select("id, owner_id, label, active, expires_on").eq("token", data.token).maybeSingle();
+    if (!link || !link.active || (link.expires_on && link.expires_on < todayISO())) return { ok: false, quote: null, error: "This booking link is invalid or has expired." };
+    return doSubmit(data.booking, link.owner_id, `link: ${link.label} (${data.booking.contact_name})`, link.id);
+  });
+
+async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, actor: string, linkId: string | null): Promise<SubmitResult> {
+  {
     const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
     const P = await import("./planner.server");
 
@@ -59,7 +73,7 @@ export const submitBooking = createServerFn({ method: "POST" })
     for (let attempt = 0; attempt < 3; attempt++) {
       const snap = await P.snapshot(admin, data.event_date);
       const ctx = await P.loadCtx(admin, data.event_date);
-      const quote = buildQuote(input, ctx);
+      const quote = buildQuote(input, ctx, { preferTruckIds: data.truck_choice });
       if (!quote.ok) return { ok: false, quote };
       if (quote.needsApproval && (!data.approver_name || !data.approver_email))
         return { ok: false, quote, error: "This order needs a second approver at your company — please enter their name and email." };
@@ -83,7 +97,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       const now = new Date().toISOString();
       const ref = "RF-" + hex(3).toUpperCase();
       const row = {
-        id, ref, user_id: context.userId, status, package: data.package, event_date: data.event_date, start_time: data.start_time, end_time: data.end_time,
+        id, ref, user_id: userId, planner_link_id: linkId, planner_token: null, status, package: data.package, event_date: data.event_date, start_time: data.start_time, end_time: data.end_time,
         venue_name: data.venue_name, address: data.address, town: data.town, lat: data.lat, lon: data.lon, venue_type: data.venue_type, has_400v: data.has_400v,
         clearance_m: data.clearance_m, space_m2: data.space_m2, guests: data.guests, vegan: data.vegan, gluten_free: data.gluten_free, halal: data.halal,
         espresso: data.espresso, company_name: data.company_name, billing_address: data.billing_address, po_number: data.po_number, contact_name: data.contact_name,
@@ -97,7 +111,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       const changes = P.reshuffleChanges(ctx, quote.reshuffles, `to make room for ${ref}`);
       if (status === "permit_check")
         changes.push({ id, notify: `${ref} needs a permit check: ${[...quote.permitReasons, routeNote].filter(Boolean).join(" ")}`, kind: "permit_check" } as any);
-      const { error } = await admin.rpc("commit_day_plan", { _date: data.event_date, _snapshot: snap, _new: row as any, _changes: changes as any, _actor: (context.claims as any)?.email ?? "planner" });
+      const { error } = await admin.rpc("commit_day_plan", { _date: data.event_date, _snapshot: snap, _new: row as any, _changes: changes as any, _actor: actor });
       if (!error) return { ok: true, bookingId: id, ref, status, approvalToken: token, quote, routeNote };
       if (String(error.message).includes("stale_plan")) continue;
       console.error(error);
@@ -105,7 +119,8 @@ export const submitBooking = createServerFn({ method: "POST" })
       return { ok: false, quote, error: "Saving the booking failed. Please try again." };
     }
     return { ok: false, quote: null, error: "Several bookings for this date arrived at the same time. Please submit again." };
-  });
+  }
+}
 
 /** Re-run the solver for the given dates (or every future date). Any signed-in user may trigger a re-plan; it only applies engine rules. */
 export const recalcDates = createServerFn({ method: "POST" })
@@ -142,4 +157,27 @@ export const respondApproval = createServerFn({ method: "POST" })
       try { await P.recalcDate(admin, date, "client approver", data.accept ? "client approved a quote" : "client rejected a quote"); } catch (e) { console.error(e); }
     }
     return { ok: true as const, status: status as string };
+  });
+
+async function serverQuote(data: z.infer<typeof bookingSchema>) {
+  const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+  const P = await import("./planner.server");
+  const ctx = await P.loadCtx(admin, data.event_date);
+  const route = await roadDistance(ctx.config.depot, { lat: data.lat, lon: data.lon });
+  return buildQuote({ ...data, distance_km: route.km }, ctx, { preferTruckIds: data.truck_choice });
+}
+
+/** The authoritative quote (same server code the booking uses) — shown on the review step. */
+export const previewQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => bookingSchema.parse(d))
+  .handler(async ({ data }) => serverQuote(data));
+
+export const previewQuoteByToken = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ token: z.string().min(32).max(128), booking: bookingSchema }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+    const { data: link } = await admin.from("planner_links").select("active, expires_on").eq("token", data.token).maybeSingle();
+    if (!link || !link.active || (link.expires_on && link.expires_on < todayISO())) throw new Error("This booking link is invalid or has expired.");
+    return serverQuote(data.booking);
   });

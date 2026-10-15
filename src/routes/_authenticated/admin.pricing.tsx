@@ -28,9 +28,6 @@ export const Route = createFileRoute("/_authenticated/admin/pricing")({
           { path: "depot.label", label: "Depot label", type: "text" },
           { path: "depot.lat", label: "Depot latitude", type: "number" },
           { path: "depot.lon", label: "Depot longitude", type: "number" },
-          { path: "afterwork_package.name", label: "Best-seller package name", type: "text" },
-          { path: "afterwork_package.start", label: "Package start", type: "time" },
-          { path: "afterwork_package.end", label: "Package end", type: "time" },
         ]}
       >
         {(cfg, set) => (

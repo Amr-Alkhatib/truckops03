@@ -6,12 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
+import { LangSwitch } from "./LangSwitch";
+import { useI18n } from "@/lib/i18n";
 
 export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
   const { user, isStaff } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -22,10 +25,10 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
 
   const links = user ? (
     <>
-      <Link to="/book" className="hover:text-primary" activeProps={{ className: "text-primary" }}>New booking</Link>
-      <Link to="/bookings" className="hover:text-primary" activeProps={{ className: "text-primary" }}>My bookings</Link>
-      <Link to="/profile" className="hover:text-primary" activeProps={{ className: "text-primary" }}>Profile & places</Link>
-      {isStaff && <Link to="/admin" className="hover:text-primary" activeProps={{ className: "text-primary" }}>Back office</Link>}
+      <Link to="/book" className="hover:text-primary" activeProps={{ className: "text-primary" }}>{t("New booking")}</Link>
+      <Link to="/bookings" className="hover:text-primary" activeProps={{ className: "text-primary" }}>{t("My bookings")}</Link>
+      <Link to="/profile" className="hover:text-primary" activeProps={{ className: "text-primary" }}>{t("Profile & places")}</Link>
+      {isStaff && <Link to="/admin" className="hover:text-primary" activeProps={{ className: "text-primary" }}>{t("Back office")}</Link>}
     </>
   ) : null;
 
@@ -42,15 +45,16 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
         </Link>
         <nav className={`hidden flex-1 items-center gap-6 text-sm font-medium md:flex ${overlay ? "text-ink-foreground" : ""}`}>{links}</nav>
         <div className="ml-auto flex items-center gap-2">
+          <LangSwitch />
           <ThemeToggle />
           {user ? (
             <Button variant="ghost" size="sm" onClick={signOut} className="hidden md:inline-flex">
-              <LogOut /> Sign out
+              <LogOut /> {t("Sign out")}
             </Button>
           ) : (
             <>
-              <Button asChild variant={overlay ? "glass" : "ghost"} size="sm"><Link to="/login">Sign in</Link></Button>
-              <Button asChild variant="hero" size="sm"><Link to="/signup">Get started</Link></Button>
+              <Button asChild variant={overlay ? "glass" : "ghost"} size="sm"><Link to="/login">{t("Sign in")}</Link></Button>
+              <Button asChild variant="hero" size="sm"><Link to="/signup">{t("Get started")}</Link></Button>
             </>
           )}
           {user && (
@@ -63,7 +67,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
       {open && user && (
         <nav className="glass mx-4 mb-3 flex flex-col gap-3 rounded-xl p-4 text-sm font-medium md:hidden" onClick={() => setOpen(false)}>
           {links}
-          <button onClick={signOut} className="text-left text-muted-foreground">Sign out</button>
+          <button onClick={signOut} className="text-left text-muted-foreground">{t("Sign out")}</button>
         </nav>
       )}
     </header>

@@ -1,3 +1,4 @@
+import { PlannerLinks } from "@/components/PlannerLinks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -90,6 +91,8 @@ function Profile() {
           </div>
         )}
       </section>
+
+      <PlannerLinks />
 
       <section>
         <div className="mb-4 flex items-center justify-between">

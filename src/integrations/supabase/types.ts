@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_change_log: {
+        Row: {
+          action: string
+          actor: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          row_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          row_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          row_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           config: Json
@@ -145,6 +181,8 @@ export type Database = {
           permit_number: string | null
           permit_reasons: string[]
           permit_status: string
+          planner_link_id: string | null
+          planner_token: string | null
           po_number: string
           quote: Json
           ref: string
@@ -201,6 +239,8 @@ export type Database = {
           permit_number?: string | null
           permit_reasons?: string[]
           permit_status?: string
+          planner_link_id?: string | null
+          planner_token?: string | null
           po_number: string
           quote: Json
           ref?: string
@@ -257,6 +297,8 @@ export type Database = {
           permit_number?: string | null
           permit_reasons?: string[]
           permit_status?: string
+          planner_link_id?: string | null
+          planner_token?: string | null
           po_number?: string
           quote?: Json
           ref?: string
@@ -278,7 +320,15 @@ export type Database = {
           venue_name?: string
           venue_type?: Database["public"]["Enums"]["venue_type"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_planner_link_id_fkey"
+            columns: ["planner_link_id"]
+            isOneToOne: false
+            referencedRelation: "planner_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       compliance_docs: {
         Row: {
@@ -459,6 +509,45 @@ export type Database = {
         }
         Relationships: []
       }
+      packages: {
+        Row: {
+          active: boolean
+          bestseller: boolean
+          created_at: string
+          description: string
+          end_time: string
+          id: string
+          name: string
+          slug: string
+          sort: number
+          start_time: string
+        }
+        Insert: {
+          active?: boolean
+          bestseller?: boolean
+          created_at?: string
+          description?: string
+          end_time: string
+          id?: string
+          name: string
+          slug: string
+          sort?: number
+          start_time: string
+        }
+        Update: {
+          active?: boolean
+          bestseller?: boolean
+          created_at?: string
+          description?: string
+          end_time?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort?: number
+          start_time?: string
+        }
+        Relationships: []
+      }
       pair_rules: {
         Row: {
           active: boolean
@@ -489,6 +578,45 @@ export type Database = {
           rule_type?: Database["public"]["Enums"]["pair_rule_type"]
           system_key?: string | null
           truck_ids?: string[]
+        }
+        Relationships: []
+      }
+      planner_links: {
+        Row: {
+          active: boolean
+          billing_address: string
+          company_name: string
+          contact_email: string | null
+          created_at: string
+          expires_on: string | null
+          id: string
+          label: string
+          owner_id: string
+          token: string
+        }
+        Insert: {
+          active?: boolean
+          billing_address?: string
+          company_name?: string
+          contact_email?: string | null
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          label: string
+          owner_id: string
+          token: string
+        }
+        Update: {
+          active?: boolean
+          billing_address?: string
+          company_name?: string
+          contact_email?: string | null
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          label?: string
+          owner_id?: string
+          token?: string
         }
         Relationships: []
       }
@@ -945,6 +1073,8 @@ export type Database = {
       }
       day_snapshot: { Args: { _date: string }; Returns: string }
       get_booking_by_token: { Args: { _token: string }; Returns: Json }
+      get_planner_bookings: { Args: { _token: string }; Returns: Json }
+      get_planner_link: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

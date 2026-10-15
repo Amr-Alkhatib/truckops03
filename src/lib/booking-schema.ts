@@ -9,7 +9,8 @@ const req = (label: string, max = 200) =>
 
 export const bookingSchema = z
   .object({
-    package: z.enum(["afterwork", "custom"]),
+    package: z.string().min(1, "Choose a package").max(60),
+    truck_choice: z.array(z.string().uuid()).max(12).optional(),
     event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Please pick a date"),
     start_time: time,
     end_time: time,

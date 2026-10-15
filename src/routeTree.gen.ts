@@ -20,10 +20,13 @@ import { Route as AuthenticatedBookRouteImport } from './routes/_authenticated/b
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
+import { Route as AuthenticatedAdminChangesRouteImport } from './routes/_authenticated/admin.changes'
 import { Route as AuthenticatedAdminComplianceRouteImport } from './routes/_authenticated/admin.compliance'
 import { Route as AuthenticatedAdminFleetRouteImport } from './routes/_authenticated/admin.fleet'
+import { Route as AuthenticatedAdminPackagesRouteImport } from './routes/_authenticated/admin.packages'
 import { Route as AuthenticatedAdminPolicyRouteImport } from './routes/_authenticated/admin.policy'
 import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated/admin.pricing'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
@@ -88,6 +91,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -97,6 +105,12 @@ const AuthenticatedAdminCalendarRoute =
   AuthenticatedAdminCalendarRouteImport.update({
     id: '/calendar',
     path: '/calendar',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminChangesRoute =
+  AuthenticatedAdminChangesRouteImport.update({
+    id: '/changes',
+    path: '/changes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminComplianceRoute =
@@ -110,6 +124,12 @@ const AuthenticatedAdminFleetRoute = AuthenticatedAdminFleetRouteImport.update({
   path: '/fleet',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminPackagesRoute =
+  AuthenticatedAdminPackagesRouteImport.update({
+    id: '/packages',
+    path: '/packages',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPolicyRoute =
   AuthenticatedAdminPolicyRouteImport.update({
     id: '/policy',
@@ -172,9 +192,12 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -196,9 +219,12 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -223,9 +249,12 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/_authenticated/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/_authenticated/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/_authenticated/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/_authenticated/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -250,9 +279,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/admin/calendar'
+    | '/admin/changes'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/packages'
     | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
@@ -274,9 +306,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/admin/calendar'
+    | '/admin/changes'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/packages'
     | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
@@ -300,9 +335,12 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/_authenticated/admin/calendar'
+    | '/_authenticated/admin/changes'
     | '/_authenticated/admin/compliance'
     | '/_authenticated/admin/fleet'
+    | '/_authenticated/admin/packages'
     | '/_authenticated/admin/policy'
     | '/_authenticated/admin/pricing'
     | '/_authenticated/admin/rules'
@@ -324,6 +362,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApproveTokenRoute: typeof ApproveTokenRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -405,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -419,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/changes': {
+      id: '/_authenticated/admin/changes'
+      path: '/changes'
+      fullPath: '/admin/changes'
+      preLoaderRoute: typeof AuthenticatedAdminChangesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/compliance': {
       id: '/_authenticated/admin/compliance'
       path: '/compliance'
@@ -431,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/fleet'
       fullPath: '/admin/fleet'
       preLoaderRoute: typeof AuthenticatedAdminFleetRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/packages': {
+      id: '/_authenticated/admin/packages'
+      path: '/packages'
+      fullPath: '/admin/packages'
+      preLoaderRoute: typeof AuthenticatedAdminPackagesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/policy': {
@@ -501,8 +561,10 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
+  AuthenticatedAdminChangesRoute: typeof AuthenticatedAdminChangesRoute
   AuthenticatedAdminComplianceRoute: typeof AuthenticatedAdminComplianceRoute
   AuthenticatedAdminFleetRoute: typeof AuthenticatedAdminFleetRoute
+  AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRoute
   AuthenticatedAdminPolicyRoute: typeof AuthenticatedAdminPolicyRoute
   AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
@@ -515,8 +577,10 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
+  AuthenticatedAdminChangesRoute: AuthenticatedAdminChangesRoute,
   AuthenticatedAdminComplianceRoute: AuthenticatedAdminComplianceRoute,
   AuthenticatedAdminFleetRoute: AuthenticatedAdminFleetRoute,
+  AuthenticatedAdminPackagesRoute: AuthenticatedAdminPackagesRoute,
   AuthenticatedAdminPolicyRoute: AuthenticatedAdminPolicyRoute,
   AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
@@ -558,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApproveTokenRoute: ApproveTokenRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
