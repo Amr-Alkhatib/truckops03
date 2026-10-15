@@ -16,3 +16,6 @@
 - tsconfig keeps `strict` but disables exactOptionalPropertyTypes/noUncheckedIndexedAccess/noPropertyAccessFromIndexSignature — they fought generated Supabase types and Zod output.
 - Truck assignment is a day-level solver (`src/lib/engine/solver.ts`) run identically in the browser (preview) and server; only `commit_day_plan` (advisory lock + snapshot check) may write trucks/totals — a trigger blocks every other write to computed booking fields.
 - System rules (`pair_rules.is_system`) are immutable via DB trigger; legal/fee seed data carries source_url/verified_on/status and unknowns stay NULL so the engine routes them to "Permit check" instead of guessing.
+- The booking wizard lives in `src/components/BookingWizard.tsx` and serves both `/book` (account) and `/p/$token` (planner link, booking owned by the link creator); the review step always shows the server quote (`previewQuote*`), the browser engine only drives live feedback.
+- Every admin table has a `log_admin_change` trigger writing `admin_change_log`; add the trigger to any new admin-editable table.
+- UI text is translated via `src/lib/i18n.ts` keyed by English text; untranslated strings fall back to English.

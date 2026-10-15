@@ -1,12 +1,14 @@
 # TruckOps roadmap
-- [x] Iteration 1–2: schema, engine, wizard, profile, back office, tests
-## Iteration 3
-- [x] 1 Auth: /auth/callback, resend w/ cooldown, forgot/reset password (redirect allow-list: user must check in Cloud settings)
-- [x] 2 Locked system rules + DB trigger + lock UI; Wurst clearance + ORS HGV check (needs ORS_API_KEY to auto-verify)
-- [x] 3 README rules + Policy notes page
-- [x] 4 VAT rates by date of service with sources
-- [x] 5 Towns registry real data, Permit check flow, auto-create towns + checklist
-- [x] 6 Compliance: docs, crews, Sunday tracking, min wage, flags, BW holidays
-- [x] 7 Solver wired into booking, approval and admin changes, advisory lock, conflicts
-- [x] README sources + algorithm
-- [x] Tests + production build
+- [x] Iterations 1–3
+## Gap list fixes
+- [x] Weekend surcharge food only
+- [x] Extra-truck explanation
+- [x] Change log (all admin tables)
+- [x] Packages table + admin page
+- [ ] Approval email — blocked: needs an email sender domain
+- [~] Block codes + params — codes exist; params not filled everywhere
+- [x] Late finish / incomplete town on public ground → Permit check
+- [x] Server-checked quote on review step
+- [x] Planner truck swap
+- [~] German/English switch — header, home, booking form, quote panel; other pages, engine messages and PDF still English
+- [x] Planner booking links alongside accounts
