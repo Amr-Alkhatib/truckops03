@@ -59,3 +59,35 @@ export function isInBlackout(
   if (b.start_date) return date === b.start_date;
   return false;
 }
+
+export function addDays(d: string, n: number): string {
+  const dt = parseISODate(d);
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+
+export function isSunday(d: string): boolean {
+  return parseISODate(d).getUTCDay() === 0;
+}
+
+/** Easter Sunday (Gregorian, anonymous algorithm). */
+export function easterSunday(year: number): string {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** BW "stille Feiertage" named in the brief: Karfreitag, Volkstrauertag, Totensonntag. */
+export function silentDaysBW(year: number): { date: string; name: string }[] {
+  const christmas = parseISODate(`${year}-12-25`);
+  const wd = christmas.getUTCDay(); // 0 = Sunday
+  const fourthAdvent = addDays(`${year}-12-25`, wd === 0 ? -7 : -wd);
+  const totensonntag = addDays(fourthAdvent, -28);
+  return [
+    { date: addDays(easterSunday(year), -2), name: "Karfreitag" },
+    { date: addDays(totensonntag, -7), name: "Volkstrauertag" },
+    { date: totensonntag, name: "Totensonntag" },
+  ];
+}
