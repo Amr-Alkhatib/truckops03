@@ -22,8 +22,10 @@ import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
+import { Route as AuthenticatedAdminChangesRouteImport } from './routes/_authenticated/admin.changes'
 import { Route as AuthenticatedAdminComplianceRouteImport } from './routes/_authenticated/admin.compliance'
 import { Route as AuthenticatedAdminFleetRouteImport } from './routes/_authenticated/admin.fleet'
+import { Route as AuthenticatedAdminPackagesRouteImport } from './routes/_authenticated/admin.packages'
 import { Route as AuthenticatedAdminPolicyRouteImport } from './routes/_authenticated/admin.policy'
 import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated/admin.pricing'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
@@ -99,6 +101,12 @@ const AuthenticatedAdminCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminChangesRoute =
+  AuthenticatedAdminChangesRouteImport.update({
+    id: '/changes',
+    path: '/changes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminComplianceRoute =
   AuthenticatedAdminComplianceRouteImport.update({
     id: '/compliance',
@@ -110,6 +118,12 @@ const AuthenticatedAdminFleetRoute = AuthenticatedAdminFleetRouteImport.update({
   path: '/fleet',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminPackagesRoute =
+  AuthenticatedAdminPackagesRouteImport.update({
+    id: '/packages',
+    path: '/packages',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPolicyRoute =
   AuthenticatedAdminPolicyRouteImport.update({
     id: '/policy',
@@ -173,8 +187,10 @@ export interface FileRoutesByFullPath {
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -197,8 +213,10 @@ export interface FileRoutesByTo {
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -224,8 +242,10 @@ export interface FileRoutesById {
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/_authenticated/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/_authenticated/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/_authenticated/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/_authenticated/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
@@ -251,8 +271,10 @@ export interface FileRouteTypes {
     | '/approve/$token'
     | '/auth/callback'
     | '/admin/calendar'
+    | '/admin/changes'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/packages'
     | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
@@ -275,8 +297,10 @@ export interface FileRouteTypes {
     | '/approve/$token'
     | '/auth/callback'
     | '/admin/calendar'
+    | '/admin/changes'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/packages'
     | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
@@ -301,8 +325,10 @@ export interface FileRouteTypes {
     | '/approve/$token'
     | '/auth/callback'
     | '/_authenticated/admin/calendar'
+    | '/_authenticated/admin/changes'
     | '/_authenticated/admin/compliance'
     | '/_authenticated/admin/fleet'
+    | '/_authenticated/admin/packages'
     | '/_authenticated/admin/policy'
     | '/_authenticated/admin/pricing'
     | '/_authenticated/admin/rules'
@@ -419,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/changes': {
+      id: '/_authenticated/admin/changes'
+      path: '/changes'
+      fullPath: '/admin/changes'
+      preLoaderRoute: typeof AuthenticatedAdminChangesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/compliance': {
       id: '/_authenticated/admin/compliance'
       path: '/compliance'
@@ -431,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/fleet'
       fullPath: '/admin/fleet'
       preLoaderRoute: typeof AuthenticatedAdminFleetRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/packages': {
+      id: '/_authenticated/admin/packages'
+      path: '/packages'
+      fullPath: '/admin/packages'
+      preLoaderRoute: typeof AuthenticatedAdminPackagesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/policy': {
@@ -501,8 +541,10 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
+  AuthenticatedAdminChangesRoute: typeof AuthenticatedAdminChangesRoute
   AuthenticatedAdminComplianceRoute: typeof AuthenticatedAdminComplianceRoute
   AuthenticatedAdminFleetRoute: typeof AuthenticatedAdminFleetRoute
+  AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRoute
   AuthenticatedAdminPolicyRoute: typeof AuthenticatedAdminPolicyRoute
   AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
@@ -515,8 +557,10 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
+  AuthenticatedAdminChangesRoute: AuthenticatedAdminChangesRoute,
   AuthenticatedAdminComplianceRoute: AuthenticatedAdminComplianceRoute,
   AuthenticatedAdminFleetRoute: AuthenticatedAdminFleetRoute,
+  AuthenticatedAdminPackagesRoute: AuthenticatedAdminPackagesRoute,
   AuthenticatedAdminPolicyRoute: AuthenticatedAdminPolicyRoute,
   AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
