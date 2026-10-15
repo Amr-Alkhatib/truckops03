@@ -19,3 +19,4 @@
 - The booking wizard lives in `src/components/BookingWizard.tsx` and serves both `/book` (account) and `/p/$token` (planner link, booking owned by the link creator); the review step always shows the server quote (`previewQuote*`), the browser engine only drives live feedback.
 - Every admin table has a `log_admin_change` trigger writing `admin_change_log`; add the trigger to any new admin-editable table.
 - UI text is translated via `src/lib/i18n.ts` keyed by English text; untranslated strings fall back to English.
+- Distances are per truck from its own yard (`yardOf` + `input.yard_km`); never reintroduce a single depot. Server distances go through `yardDistances` (route_cache); legacy contexts without yards fall back to `distance_km`.

@@ -49,11 +49,12 @@ function Index() {
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-ink-foreground/20 px-3 py-1 text-xs uppercase tracking-[0.2em]">
               <MapPin className="size-3" /> Stuttgart · Baden-Württemberg
             </p>
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium">{t("Now also serving the Heilbronn region")}</p>
             <h1 className="text-5xl font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">
               Street food, <em className="text-gradient not-italic">served corporate.</em>
             </h1>
             <p className="mt-6 max-w-xl text-lg opacity-80">
-              Rolling Feast brings a curated fleet of food trucks to your campus, rooftop or square — with permits, power and crew sorted. One click, one honest quote.
+              Rolling Feast brings a curated fleet of food trucks to your campus, rooftop or square — with permits, power and crew sorted. From our yards in Stuttgart and Heilbronn. One click, one honest quote.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="hero" size="lg" className="h-12 px-7 text-base">

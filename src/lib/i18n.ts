@@ -24,6 +24,7 @@ const DE: Record<string, string> = {
   "Ready to book": "Buchbar", "Needs a second approver at your company": "Benötigt eine zweite Freigabe in Ihrem Unternehmen",
   "Why some trucks can't come": "Warum manche Trucks nicht kommen können",
   "Get an instant quote": "Sofort-Angebot erhalten", "Book the Afterwork Party": "Afterwork Party buchen",
+  "Now also serving the Heilbronn region": "Jetzt auch in der Region Heilbronn",
   "Accept": "Annehmen", "Reject": "Ablehnen", "Download PDF": "PDF herunterladen", "Booking link": "Buchungslink",
 };
 
