@@ -50,6 +50,13 @@
       "when": 1792074814270,
       "tag": "0006_compliance_doc_types",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792075209865,
+      "tag": "0007_compliance_status_all_docs",
+      "breakpoints": true
     }
   ]
 }

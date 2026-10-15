@@ -908,6 +908,7 @@ export type Database = {
           expired: boolean
           expires_on: string
           label: string
+          required: boolean
           truck_id: string
         }[]
       }
