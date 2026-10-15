@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AuthenticatedBookRouteImport } from './routes/_authenticated/book'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
 import { Route as AuthenticatedBookingsIdRouteImport } from './routes/_authenticated/bookings.$id'
@@ -42,6 +43,11 @@ const AuthenticatedBookRoute = AuthenticatedBookRouteImport.update({
   path: '/book',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApproveTokenRoute = ApproveTokenRouteImport.update({
   id: '/approve/$token',
   path: '/approve/$token',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/book': typeof AuthenticatedBookRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/bookings/': typeof AuthenticatedBookingsIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/book': typeof AuthenticatedBookRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/bookings': typeof AuthenticatedBookingsIndexRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/book': typeof AuthenticatedBookRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/_authenticated/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/_authenticated/bookings/': typeof AuthenticatedBookingsIndexRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/book'
+    | '/profile'
     | '/approve/$token'
     | '/bookings/$id'
     | '/bookings/'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/book'
+    | '/profile'
     | '/approve/$token'
     | '/bookings/$id'
     | '/bookings'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_authenticated/book'
+    | '/_authenticated/profile'
     | '/approve/$token'
     | '/_authenticated/bookings/$id'
     | '/_authenticated/bookings/'
@@ -164,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/approve/$token': {
       id: '/approve/$token'
       path: '/approve/$token'
@@ -190,12 +209,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBookRoute: typeof AuthenticatedBookRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedBookingsIdRoute: typeof AuthenticatedBookingsIdRoute
   AuthenticatedBookingsIndexRoute: typeof AuthenticatedBookingsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBookRoute: AuthenticatedBookRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedBookingsIdRoute: AuthenticatedBookingsIdRoute,
   AuthenticatedBookingsIndexRoute: AuthenticatedBookingsIndexRoute,
 }
