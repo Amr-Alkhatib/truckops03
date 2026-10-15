@@ -602,11 +602,15 @@ export type Database = {
         | "rejected"
         | "cancelled"
         | "completed"
+        | "permit_check"
+        | "conflict"
       pair_rule_type:
         | "never_same_day"
         | "never_same_event"
         | "max_one_of_group_on_weekend_day"
         | "allowed_together"
+        | "min_clearance_route"
+        | "never_assign"
       truck_status: "active" | "retired"
       venue_type: "public_ground" | "private_campus"
     }
@@ -744,12 +748,16 @@ export const Constants = {
         "rejected",
         "cancelled",
         "completed",
+        "permit_check",
+        "conflict",
       ],
       pair_rule_type: [
         "never_same_day",
         "never_same_event",
         "max_one_of_group_on_weekend_day",
         "allowed_together",
+        "min_clearance_route",
+        "never_assign",
       ],
       truck_status: ["active", "retired"],
       venue_type: ["public_ground", "private_campus"],
