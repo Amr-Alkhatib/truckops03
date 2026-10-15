@@ -1,0 +1,2 @@
+ALTER TABLE public.compliance_docs DROP CONSTRAINT IF EXISTS compliance_docs_doc_type_check;
+ALTER TABLE public.compliance_docs ADD CONSTRAINT compliance_docs_doc_type_check CHECK (doc_type IN ('reisegewerbekarte','food_registration','ifsg_belehrung','tuev','liability_insurance','gewerbeanmeldung','gaststaetten_gestattung','other'));
