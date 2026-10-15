@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
 import { Route as AuthenticatedAdminComplianceRouteImport } from './routes/_authenticated/admin.compliance'
 import { Route as AuthenticatedAdminFleetRouteImport } from './routes/_authenticated/admin.fleet'
+import { Route as AuthenticatedAdminPolicyRouteImport } from './routes/_authenticated/admin.policy'
 import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated/admin.pricing'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminTownsRouteImport } from './routes/_authenticated/admin.towns'
@@ -109,6 +110,12 @@ const AuthenticatedAdminFleetRoute = AuthenticatedAdminFleetRouteImport.update({
   path: '/fleet',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminPolicyRoute =
+  AuthenticatedAdminPolicyRouteImport.update({
+    id: '/policy',
+    path: '/policy',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPricingRoute =
   AuthenticatedAdminPricingRouteImport.update({
     id: '/pricing',
@@ -168,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/towns': typeof AuthenticatedAdminTownsRoute
@@ -191,6 +199,7 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/towns': typeof AuthenticatedAdminTownsRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/compliance': typeof AuthenticatedAdminComplianceRoute
   '/_authenticated/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/_authenticated/admin/policy': typeof AuthenticatedAdminPolicyRoute
   '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/_authenticated/admin/towns': typeof AuthenticatedAdminTownsRoute
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
     | '/admin/towns'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/compliance'
     | '/admin/fleet'
+    | '/admin/policy'
     | '/admin/pricing'
     | '/admin/rules'
     | '/admin/towns'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/compliance'
     | '/_authenticated/admin/fleet'
+    | '/_authenticated/admin/policy'
     | '/_authenticated/admin/pricing'
     | '/_authenticated/admin/rules'
     | '/_authenticated/admin/towns'
@@ -420,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFleetRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/policy': {
+      id: '/_authenticated/admin/policy'
+      path: '/policy'
+      fullPath: '/admin/policy'
+      preLoaderRoute: typeof AuthenticatedAdminPolicyRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/pricing': {
       id: '/_authenticated/admin/pricing'
       path: '/pricing'
@@ -483,6 +503,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
   AuthenticatedAdminComplianceRoute: typeof AuthenticatedAdminComplianceRoute
   AuthenticatedAdminFleetRoute: typeof AuthenticatedAdminFleetRoute
+  AuthenticatedAdminPolicyRoute: typeof AuthenticatedAdminPolicyRoute
   AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
   AuthenticatedAdminTownsRoute: typeof AuthenticatedAdminTownsRoute
@@ -496,6 +517,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
   AuthenticatedAdminComplianceRoute: AuthenticatedAdminComplianceRoute,
   AuthenticatedAdminFleetRoute: AuthenticatedAdminFleetRoute,
+  AuthenticatedAdminPolicyRoute: AuthenticatedAdminPolicyRoute,
   AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
   AuthenticatedAdminTownsRoute: AuthenticatedAdminTownsRoute,

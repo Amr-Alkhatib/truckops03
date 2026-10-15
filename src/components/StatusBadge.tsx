@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 const MAP: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
   awaiting_approval: { label: "Awaiting client approval", cls: "bg-warning/20 text-warning-foreground dark:text-warning" },
+  permit_check: { label: "Permit check", cls: "bg-warning/25 text-warning-foreground dark:text-warning" },
+  conflict: { label: "Conflict", cls: "bg-destructive/20 text-destructive" },
   confirmed: { label: "Confirmed", cls: "bg-success/15 text-success" },
   rejected: { label: "Rejected by client", cls: "bg-destructive/15 text-destructive" },
   cancelled: { label: "Cancelled", cls: "bg-muted text-muted-foreground line-through" },
