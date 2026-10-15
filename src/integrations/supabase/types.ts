@@ -32,6 +32,45 @@ export type Database = {
         }
         Relationships: []
       }
+      assignments: {
+        Row: {
+          booking_id: string
+          created_at: string
+          event_date: string
+          id: string
+          truck_id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          event_date: string
+          id?: string
+          truck_id: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          event_date?: string
+          id?: string
+          truck_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_audit: {
         Row: {
           actor: string
@@ -73,6 +112,7 @@ export type Database = {
       bookings: {
         Row: {
           address: string
+          alcohol_served: boolean
           approval_token: string | null
           approver_email: string | null
           approver_name: string | null
@@ -80,8 +120,10 @@ export type Database = {
           clearance_m: number | null
           client_response_reason: string | null
           company_name: string
+          conflict_reason: string | null
           contact_mobile: string
           contact_name: string
+          county: string | null
           created_at: string
           distance_computed_at: string
           distance_km: number
@@ -97,12 +139,23 @@ export type Database = {
           lat: number
           lon: number
           package: string
+          permit_fee: number | null
+          permit_file_path: string | null
+          permit_issued_on: string | null
+          permit_number: string | null
+          permit_reasons: string[]
+          permit_status: string
           po_number: string
           quote: Json
           ref: string
+          route_clearance_note: string | null
+          route_clearance_status: string
+          sales_to_public: boolean
           space_m2: number
           start_time: string
+          state: string | null
           status: Database["public"]["Enums"]["booking_status"]
+          street_group: string | null
           total_gross: number
           total_net: number
           town: string
@@ -115,6 +168,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          alcohol_served?: boolean
           approval_token?: string | null
           approver_email?: string | null
           approver_name?: string | null
@@ -122,8 +176,10 @@ export type Database = {
           clearance_m?: number | null
           client_response_reason?: string | null
           company_name: string
+          conflict_reason?: string | null
           contact_mobile: string
           contact_name: string
+          county?: string | null
           created_at?: string
           distance_computed_at: string
           distance_km: number
@@ -139,12 +195,23 @@ export type Database = {
           lat: number
           lon: number
           package: string
+          permit_fee?: number | null
+          permit_file_path?: string | null
+          permit_issued_on?: string | null
+          permit_number?: string | null
+          permit_reasons?: string[]
+          permit_status?: string
           po_number: string
           quote: Json
           ref?: string
+          route_clearance_note?: string | null
+          route_clearance_status?: string
+          sales_to_public?: boolean
           space_m2: number
           start_time: string
+          state?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
+          street_group?: string | null
           total_gross: number
           total_net: number
           town: string
@@ -157,6 +224,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          alcohol_served?: boolean
           approval_token?: string | null
           approver_email?: string | null
           approver_name?: string | null
@@ -164,8 +232,10 @@ export type Database = {
           clearance_m?: number | null
           client_response_reason?: string | null
           company_name?: string
+          conflict_reason?: string | null
           contact_mobile?: string
           contact_name?: string
+          county?: string | null
           created_at?: string
           distance_computed_at?: string
           distance_km?: number
@@ -181,12 +251,23 @@ export type Database = {
           lat?: number
           lon?: number
           package?: string
+          permit_fee?: number | null
+          permit_file_path?: string | null
+          permit_issued_on?: string | null
+          permit_number?: string | null
+          permit_reasons?: string[]
+          permit_status?: string
           po_number?: string
           quote?: Json
           ref?: string
+          route_clearance_note?: string | null
+          route_clearance_status?: string
+          sales_to_public?: boolean
           space_m2?: number
           start_time?: string
+          state?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
+          street_group?: string | null
           total_gross?: number
           total_net?: number
           town?: string
@@ -206,9 +287,15 @@ export type Database = {
           expires_on: string | null
           id: string
           label: string
+          legal_basis: string
           notes: string
+          renew_every_months: number | null
           required: boolean
+          source_title: string | null
+          source_url: string | null
+          status: string
           truck_id: string | null
+          verified_on: string | null
         }
         Insert: {
           crew_member?: string | null
@@ -216,9 +303,15 @@ export type Database = {
           expires_on?: string | null
           id?: string
           label: string
+          legal_basis?: string
           notes?: string
+          renew_every_months?: number | null
           required?: boolean
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
           truck_id?: string | null
+          verified_on?: string | null
         }
         Update: {
           crew_member?: string | null
@@ -226,9 +319,15 @@ export type Database = {
           expires_on?: string | null
           id?: string
           label?: string
+          legal_basis?: string
           notes?: string
+          renew_every_months?: number | null
           required?: boolean
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
           truck_id?: string | null
+          verified_on?: string | null
         }
         Relationships: [
           {
@@ -239,6 +338,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crews: {
+        Row: {
+          id: string
+          members: string[]
+          name: string
+          notes: string
+        }
+        Insert: {
+          id?: string
+          members?: string[]
+          name: string
+          notes?: string
+        }
+        Update: {
+          id?: string
+          members?: string[]
+          name?: string
+          notes?: string
+        }
+        Relationships: []
       }
       event_presets: {
         Row: {
@@ -344,21 +464,30 @@ export type Database = {
           active: boolean
           description: string
           id: string
+          is_system: boolean
+          params: Json
           rule_type: Database["public"]["Enums"]["pair_rule_type"]
+          system_key: string | null
           truck_ids: string[]
         }
         Insert: {
           active?: boolean
           description?: string
           id?: string
+          is_system?: boolean
+          params?: Json
           rule_type: Database["public"]["Enums"]["pair_rule_type"]
+          system_key?: string | null
           truck_ids: string[]
         }
         Update: {
           active?: boolean
           description?: string
           id?: string
+          is_system?: boolean
+          params?: Json
           rule_type?: Database["public"]["Enums"]["pair_rule_type"]
+          system_key?: string | null
           truck_ids?: string[]
         }
         Relationships: []
@@ -396,53 +525,180 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          read: boolean
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message: string
+          read?: boolean
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          read?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      town_checklist: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          item: string
+          legal_basis: string
+          notes: string
+          sort: number
+          source_url: string | null
+          town_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          item: string
+          legal_basis?: string
+          notes?: string
+          sort?: number
+          source_url?: string | null
+          town_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          item?: string
+          legal_basis?: string
+          notes?: string
+          sort?: number
+          source_url?: string | null
+          town_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "town_checklist_town_id_fkey"
+            columns: ["town_id"]
+            isOneToOne: false
+            referencedRelation: "towns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       towns: {
         Row: {
+          authority_address: string | null
+          authority_email: string | null
+          authority_name: string | null
+          authority_phone: string | null
+          auto_created: boolean
           contact: string
           fee_amount: number
           fee_model: string
+          fee_table: Json | null
+          fee_value: number | null
           generators_allowed: boolean
           id: string
           issuing_authority: string
+          landkreis: string | null
           lead_time_weeks: number
+          lead_weeks: number | null
+          legal_basis: string | null
           max_trucks: number
+          min_fee: number | null
           name: string
+          night_warn_from: string | null
           notes: string
           permit_name: string
           quiet_hours_mode: string
           quiet_hours_start: string | null
+          source_title: string | null
+          source_url: string | null
+          state: string | null
+          status: string
           verified_on: string | null
         }
         Insert: {
+          authority_address?: string | null
+          authority_email?: string | null
+          authority_name?: string | null
+          authority_phone?: string | null
+          auto_created?: boolean
           contact?: string
           fee_amount?: number
           fee_model?: string
+          fee_table?: Json | null
+          fee_value?: number | null
           generators_allowed?: boolean
           id?: string
           issuing_authority?: string
+          landkreis?: string | null
           lead_time_weeks?: number
+          lead_weeks?: number | null
+          legal_basis?: string | null
           max_trucks?: number
+          min_fee?: number | null
           name: string
+          night_warn_from?: string | null
           notes?: string
           permit_name?: string
           quiet_hours_mode?: string
           quiet_hours_start?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          state?: string | null
+          status?: string
           verified_on?: string | null
         }
         Update: {
+          authority_address?: string | null
+          authority_email?: string | null
+          authority_name?: string | null
+          authority_phone?: string | null
+          auto_created?: boolean
           contact?: string
           fee_amount?: number
           fee_model?: string
+          fee_table?: Json | null
+          fee_value?: number | null
           generators_allowed?: boolean
           id?: string
           issuing_authority?: string
+          landkreis?: string | null
           lead_time_weeks?: number
+          lead_weeks?: number | null
+          legal_basis?: string | null
           max_trucks?: number
+          min_fee?: number | null
           name?: string
+          night_warn_from?: string | null
           notes?: string
           permit_name?: string
           quiet_hours_mode?: string
           quiet_hours_start?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          state?: string | null
+          status?: string
           verified_on?: string | null
         }
         Relationships: []
@@ -475,6 +731,42 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "truck_blackouts_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      truck_crew: {
+        Row: {
+          crew_id: string
+          day_type: string
+          id: string
+          truck_id: string
+        }
+        Insert: {
+          crew_id: string
+          day_type?: string
+          id?: string
+          truck_id: string
+        }
+        Update: {
+          crew_id?: string
+          day_type?: string
+          id?: string
+          truck_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_crew_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truck_crew_truck_id_fkey"
             columns: ["truck_id"]
             isOneToOne: false
             referencedRelation: "trucks"
@@ -548,11 +840,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vat_rates: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          label: string
+          legal_basis: string
+          rate: number
+          source_title: string | null
+          source_url: string | null
+          status: string
+          valid_from: string
+          valid_to: string | null
+          verified_on: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          label?: string
+          legal_basis?: string
+          rate: number
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
+          valid_from: string
+          valid_to?: string | null
+          verified_on?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          legal_basis?: string
+          rate?: number
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
+          valid_from?: string
+          valid_to?: string | null
+          verified_on?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      commit_day_plan: {
+        Args: {
+          _actor: string
+          _changes: Json
+          _date: string
+          _new: Json
+          _snapshot: string
+        }
+        Returns: string
+      }
       compliance_status: {
         Args: { _on: string }
         Returns: {
@@ -564,6 +911,38 @@ export type Database = {
           truck_id: string
         }[]
       }
+      confirm_route_clearance: {
+        Args: { _id: string; _note: string }
+        Returns: string
+      }
+      day_bookings: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          alcohol_served: boolean
+          clearance_m: number
+          distance_km: number
+          end_time: string
+          espresso: boolean
+          event_date: string
+          gluten_free: number
+          guests: number
+          halal: number
+          has_400v: boolean
+          id: string
+          locked: boolean
+          package: string
+          sales_to_public: boolean
+          space_m2: number
+          start_time: string
+          status: string
+          street_group: string
+          town: string
+          truck_ids: string[]
+          vegan: number
+          venue_type: string
+        }[]
+      }
+      day_snapshot: { Args: { _date: string }; Returns: string }
       get_booking_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
@@ -573,6 +952,16 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      record_permit: {
+        Args: {
+          _fee: number
+          _file: string
+          _id: string
+          _issued: string
+          _number: string
+        }
+        Returns: string
+      }
       respond_to_approval: {
         Args: { _accept: boolean; _reason: string; _token: string }
         Returns: string
@@ -583,6 +972,10 @@ export type Database = {
           _note: string
           _status: Database["public"]["Enums"]["booking_status"]
         }
+        Returns: undefined
+      }
+      set_street_group: {
+        Args: { _group: string; _id: string }
         Returns: undefined
       }
       truck_occupancy: {
