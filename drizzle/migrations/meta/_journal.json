@@ -36,6 +36,13 @@
       "when": 1792074689170,
       "tag": "0004_permits_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792074761145,
+      "tag": "0005_towns_fee_models",
+      "breakpoints": true
     }
   ]
 }
