@@ -27,3 +27,10 @@ npm run dev
 - TypeScript
 - React
 - Tailwind CSS
+
+## TruckOps — admin account
+The **first account that signs up becomes admin** automatically (database trigger). Everyone after that is a planner.
+Admins promote others under **Back office → Users** (staff/admin toggles).
+
+All prices, VAT rates, zones, rules, towns, fleet and compliance documents live in the database and are edited in the back office.
+The pricing & rules engine is pure TypeScript in `src/lib/engine` (tests: `bunx vitest run src/lib/engine`).
