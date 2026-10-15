@@ -27,6 +27,40 @@ export interface EngineConfig {
   approval_basis: "net" | "gross";
   depot: { label: string; lat: number; lon: number };
   afterwork_package: { name: string; start: string; end: string };
+  /** relief crews available per day for second shifts (events > crew_max_hours) */
+  relief_crews_per_day?: number;
+  /** bookings within this many days are locked (keep their trucks) */
+  lock_days?: number;
+}
+
+export interface VatRate {
+  category: VatCategory;
+  rate: number;
+  valid_from: string;
+  valid_to: string | null;
+}
+
+export interface CrewLink {
+  truck_id: string;
+  crew_id: string;
+  day_type: "all" | "weekday" | "weekend";
+}
+
+export interface Holiday {
+  date: string;
+  name: string;
+  /** BW "stiller Feiertag" (Feiertagsgesetz BW) */
+  silent?: boolean;
+}
+
+/** Another booking on some date, as needed by the day solver (no personal data). */
+export interface DayBooking {
+  id: string;
+  event_date: string;
+  input: EventInput | null; // null = fixed occupancy without details
+  truckIds: string[];
+  locked: boolean;
+  status?: string;
 }
 
 export interface Truck {
@@ -56,22 +90,38 @@ export type PairRuleType =
   | "never_same_day"
   | "never_same_event"
   | "max_one_of_group_on_weekend_day"
-  | "allowed_together";
+  | "allowed_together"
+  | "min_clearance_route"
+  | "never_assign";
 
 export interface PairRule {
   rule_type: PairRuleType;
   truck_ids: string[];
   description: string;
   active: boolean;
+  is_system?: boolean;
+  params?: Record<string, any>;
 }
+
+export type FeeModel = "per_started_m2_per_day" | "per_started_3m2_per_day" | "per_truck" | "flat" | "unknown" | "per_m2";
 
 export interface Town {
   name: string;
   permit_name: string;
   issuing_authority: string;
-  fee_model: "flat" | "per_truck" | "per_m2";
-  fee_amount: number;
-  lead_time_weeks: number;
+  fee_model: FeeModel;
+  /** DEPRECATED legacy amount; use fee_value */
+  fee_amount?: number;
+  fee_value?: number | null;
+  fee_table?: { default_group?: string; groups?: Record<string, number> } | null;
+  min_fee?: number | null;
+  /** DEPRECATED legacy lead time; use lead_weeks (null = not published) */
+  lead_time_weeks?: number;
+  lead_weeks?: number | null;
+  status?: "verified" | "unverified";
+  night_warn_from?: string | null;
+  authority_name?: string | null;
+  landkreis?: string | null;
   max_trucks: number;
   generators_allowed: boolean;
   quiet_hours_start: string | null;
@@ -105,6 +155,10 @@ export interface EventInput {
   halal: number;
   espresso: boolean;
   distance_km: number;
+  booking_id?: string;
+  sales_to_public?: boolean;
+  alcohol_served?: boolean;
+  street_group?: string | null;
 }
 
 export interface EngineContext {
@@ -117,6 +171,13 @@ export interface EngineContext {
   occupiedTruckIds: string[];
   compliance: ComplianceItem[];
   today: string; // YYYY-MM-DD
+  vatRates?: VatRate[];
+  crews?: CrewLink[];
+  holidays?: Holiday[];
+  /** other active bookings in a window around the event date */
+  bookings?: DayBooking[];
+  /** past usage count per truck, for balanced utilisation */
+  usage?: Record<string, number>;
 }
 
 export interface Issue {
@@ -131,6 +192,14 @@ export interface QuoteLine {
   net: number;
   vatRate: number;
   category: VatCategory;
+  /** amount not yet known (passed through at cost) */
+  tbc?: boolean;
+}
+
+export interface Reshuffle {
+  bookingId: string;
+  from: string[];
+  to: string[];
 }
 
 export interface VatGroup {
@@ -158,4 +227,14 @@ export interface Quote {
   needsApproval: boolean;
   needsReview: boolean;
   excluded: { name: string; reason: string }[];
+  /** booking must go to "Permit check" before it can be confirmed */
+  permitCheck: boolean;
+  permitReasons: string[];
+  townUnknown: boolean;
+  /** trucks whose route clearance must be verified (HGV height) */
+  routeCheckTruckIds: string[];
+  /** other bookings that must move to make room */
+  reshuffles: Reshuffle[];
+  /** concrete fixes computed by the solver when infeasible */
+  suggestions: string[];
 }

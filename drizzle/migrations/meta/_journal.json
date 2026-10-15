@@ -15,6 +15,48 @@
       "when": 1792072322920,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792074589293,
+      "tag": "0002_enum_additions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792074671242,
+      "tag": "0003_iteration3_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792074689170,
+      "tag": "0004_permits_storage_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792074761145,
+      "tag": "0005_towns_fee_models",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792074814270,
+      "tag": "0006_compliance_doc_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792075209865,
+      "tag": "0007_compliance_status_all_docs",
+      "breakpoints": true
     }
   ]
 }
