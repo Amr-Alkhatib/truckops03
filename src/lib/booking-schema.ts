@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** German mobile: +49 / 0049 / 0 followed by 15x, 16x or 17x and 7–9 more digits. */
+export const GERMAN_MOBILE = /^(?:\+49|0049|0)1[5-7]\d{8,10}$/;
+
 const time = z.string().regex(/^\d{2}:\d{2}$/, "Please pick a time");
 const req = (label: string, max = 200) =>
   z.string().trim().min(1, `${label} is required`).max(max, `${label} is too long`);
@@ -28,7 +31,15 @@ export const bookingSchema = z
     billing_address: req("Billing address", 400),
     po_number: req("PO number (no PO, no booking)", 60),
     contact_name: req("Contact person", 120),
-    contact_mobile: z.string().trim().regex(/^\+?[0-9 ()/-]{6,20}$/, "Enter a valid mobile number"),
+    contact_mobile: z
+      .string()
+      .trim()
+      .min(1, "A contact mobile number is required")
+      .refine((v) => GERMAN_MOBILE.test(v.replace(/[\s()/-]/g, "")), "Enter a German mobile number, e.g. +49 151 12345678 or 0170 1234567"),
+    county: z.string().max(120).optional().default(""),
+    state: z.string().max(120).optional().default(""),
+    sales_to_public: z.boolean().default(false),
+    alcohol_served: z.boolean().default(false),
     approver_name: z.string().trim().max(120).optional().or(z.literal("")),
     approver_email: z.string().trim().email("Enter a valid email").max(255).optional().or(z.literal("")),
   })

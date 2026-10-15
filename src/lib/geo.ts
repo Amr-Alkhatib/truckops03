@@ -5,6 +5,8 @@ export interface GeoResult {
   lat: number;
   lon: number;
   town: string;
+  county: string;
+  state: string;
 }
 
 export async function searchAddress(q: string, signal?: AbortSignal): Promise<GeoResult[]> {
@@ -17,6 +19,8 @@ export async function searchAddress(q: string, signal?: AbortSignal): Promise<Ge
     lat: Number(d.lat),
     lon: Number(d.lon),
     town: d.address?.city || d.address?.town || d.address?.village || d.address?.municipality || "",
+    county: d.address?.county || d.address?.city_district || "",
+    state: d.address?.state || "",
   }));
 }
 
@@ -41,4 +45,34 @@ export async function roadDistance(
     geometry: (route.geometry.coordinates as [number, number][]).map(([lon, lat]) => [lat, lon]),
     method: "OSRM driving route (router.project-osrm.org, OpenStreetMap)",
   };
+}
+
+/**
+ * HGV route check with a vehicle height restriction (OpenRouteService driving-hgv).
+ * Returns null when no API key is configured.
+ */
+export async function hgvHeightRoute(
+  apiKey: string | undefined,
+  from: { lat: number; lon: number },
+  to: { lat: number; lon: number },
+  heightM: number,
+): Promise<{ ok: boolean; km: number | null; note: string } | null> {
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-hgv", {
+      method: "POST",
+      headers: { Authorization: apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        coordinates: [[from.lon, from.lat], [to.lon, to.lat]],
+        options: { vehicle_type: "hgv", profile_params: { restrictions: { height: heightM } } },
+      }),
+    });
+    if (!res.ok) return { ok: false, km: null, note: `HGV route request failed (${res.status})` };
+    const data = (await res.json()) as any;
+    const m = data.routes?.[0]?.summary?.distance;
+    if (m == null) return { ok: false, km: null, note: "No HGV route found for this height" };
+    return { ok: true, km: Math.round(m / 10) / 100, note: `HGV route (height ${heightM} m) found: ${(m / 1000).toFixed(1)} km` };
+  } catch {
+    return { ok: false, km: null, note: "HGV route service unavailable" };
+  }
 }
