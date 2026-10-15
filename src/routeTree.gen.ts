@@ -13,11 +13,22 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBookRouteImport } from './routes/_authenticated/book'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
+import { Route as AuthenticatedAdminComplianceRouteImport } from './routes/_authenticated/admin.compliance'
+import { Route as AuthenticatedAdminFleetRouteImport } from './routes/_authenticated/admin.fleet'
+import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated/admin.pricing'
+import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
+import { Route as AuthenticatedAdminTownsRouteImport } from './routes/_authenticated/admin.towns'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
 import { Route as AuthenticatedBookingsIdRouteImport } from './routes/_authenticated/bookings.$id'
+import { Route as AuthenticatedAdminBookingsIndexRouteImport } from './routes/_authenticated/admin.bookings.index'
+import { Route as AuthenticatedAdminBookingsIdRouteImport } from './routes/_authenticated/admin.bookings.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -38,6 +49,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBookRoute = AuthenticatedBookRouteImport.update({
   id: '/book',
   path: '/book',
@@ -53,6 +69,49 @@ const ApproveTokenRoute = ApproveTokenRouteImport.update({
   path: '/approve/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminCalendarRoute =
+  AuthenticatedAdminCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminComplianceRoute =
+  AuthenticatedAdminComplianceRouteImport.update({
+    id: '/compliance',
+    path: '/compliance',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFleetRoute = AuthenticatedAdminFleetRouteImport.update({
+  id: '/fleet',
+  path: '/fleet',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPricingRoute =
+  AuthenticatedAdminPricingRouteImport.update({
+    id: '/pricing',
+    path: '/pricing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRulesRoute = AuthenticatedAdminRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminTownsRoute = AuthenticatedAdminTownsRouteImport.update({
+  id: '/towns',
+  path: '/towns',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedBookingsIndexRoute =
   AuthenticatedBookingsIndexRouteImport.update({
     id: '/bookings/',
@@ -64,16 +123,39 @@ const AuthenticatedBookingsIdRoute = AuthenticatedBookingsIdRouteImport.update({
   path: '/bookings/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminBookingsIndexRoute =
+  AuthenticatedAdminBookingsIndexRouteImport.update({
+    id: '/bookings/',
+    path: '/bookings/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminBookingsIdRoute =
+  AuthenticatedAdminBookingsIdRouteImport.update({
+    id: '/bookings/$id',
+    path: '/bookings/$id',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/book': typeof AuthenticatedBookRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
+  '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
+  '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/towns': typeof AuthenticatedAdminTownsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/bookings/': typeof AuthenticatedBookingsIndexRoute
+  '/admin/bookings/$id': typeof AuthenticatedAdminBookingsIdRoute
+  '/admin/bookings/': typeof AuthenticatedAdminBookingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,8 +164,18 @@ export interface FileRoutesByTo {
   '/book': typeof AuthenticatedBookRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
+  '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
+  '/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/towns': typeof AuthenticatedAdminTownsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/bookings': typeof AuthenticatedBookingsIndexRoute
+  '/admin/bookings/$id': typeof AuthenticatedAdminBookingsIdRoute
+  '/admin/bookings': typeof AuthenticatedAdminBookingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,11 +183,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/book': typeof AuthenticatedBookRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
+  '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/_authenticated/admin/compliance': typeof AuthenticatedAdminComplianceRoute
+  '/_authenticated/admin/fleet': typeof AuthenticatedAdminFleetRoute
+  '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/_authenticated/admin/towns': typeof AuthenticatedAdminTownsRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/bookings/$id': typeof AuthenticatedBookingsIdRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bookings/': typeof AuthenticatedBookingsIndexRoute
+  '/_authenticated/admin/bookings/$id': typeof AuthenticatedAdminBookingsIdRoute
+  '/_authenticated/admin/bookings/': typeof AuthenticatedAdminBookingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,11 +206,22 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/admin'
     | '/book'
     | '/profile'
     | '/approve/$token'
+    | '/admin/calendar'
+    | '/admin/compliance'
+    | '/admin/fleet'
+    | '/admin/pricing'
+    | '/admin/rules'
+    | '/admin/towns'
+    | '/admin/users'
     | '/bookings/$id'
+    | '/admin/'
     | '/bookings/'
+    | '/admin/bookings/$id'
+    | '/admin/bookings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,19 +230,40 @@ export interface FileRouteTypes {
     | '/book'
     | '/profile'
     | '/approve/$token'
+    | '/admin/calendar'
+    | '/admin/compliance'
+    | '/admin/fleet'
+    | '/admin/pricing'
+    | '/admin/rules'
+    | '/admin/towns'
+    | '/admin/users'
     | '/bookings/$id'
+    | '/admin'
     | '/bookings'
+    | '/admin/bookings/$id'
+    | '/admin/bookings'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
     | '/signup'
+    | '/_authenticated/admin'
     | '/_authenticated/book'
     | '/_authenticated/profile'
     | '/approve/$token'
+    | '/_authenticated/admin/calendar'
+    | '/_authenticated/admin/compliance'
+    | '/_authenticated/admin/fleet'
+    | '/_authenticated/admin/pricing'
+    | '/_authenticated/admin/rules'
+    | '/_authenticated/admin/towns'
+    | '/_authenticated/admin/users'
     | '/_authenticated/bookings/$id'
+    | '/_authenticated/admin/'
     | '/_authenticated/bookings/'
+    | '/_authenticated/admin/bookings/$id'
+    | '/_authenticated/admin/bookings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/book': {
       id: '/_authenticated/book'
       path: '/book'
@@ -190,6 +332,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApproveTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/calendar': {
+      id: '/_authenticated/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/compliance': {
+      id: '/_authenticated/admin/compliance'
+      path: '/compliance'
+      fullPath: '/admin/compliance'
+      preLoaderRoute: typeof AuthenticatedAdminComplianceRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/fleet': {
+      id: '/_authenticated/admin/fleet'
+      path: '/fleet'
+      fullPath: '/admin/fleet'
+      preLoaderRoute: typeof AuthenticatedAdminFleetRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pricing': {
+      id: '/_authenticated/admin/pricing'
+      path: '/pricing'
+      fullPath: '/admin/pricing'
+      preLoaderRoute: typeof AuthenticatedAdminPricingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/rules': {
+      id: '/_authenticated/admin/rules'
+      path: '/rules'
+      fullPath: '/admin/rules'
+      preLoaderRoute: typeof AuthenticatedAdminRulesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/towns': {
+      id: '/_authenticated/admin/towns'
+      path: '/towns'
+      fullPath: '/admin/towns'
+      preLoaderRoute: typeof AuthenticatedAdminTownsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/bookings/': {
       id: '/_authenticated/bookings/'
       path: '/bookings'
@@ -204,10 +402,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookingsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/bookings/': {
+      id: '/_authenticated/admin/bookings/'
+      path: '/bookings'
+      fullPath: '/admin/bookings/'
+      preLoaderRoute: typeof AuthenticatedAdminBookingsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/bookings/$id': {
+      id: '/_authenticated/admin/bookings/$id'
+      path: '/bookings/$id'
+      fullPath: '/admin/bookings/$id'
+      preLoaderRoute: typeof AuthenticatedAdminBookingsIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
+  AuthenticatedAdminComplianceRoute: typeof AuthenticatedAdminComplianceRoute
+  AuthenticatedAdminFleetRoute: typeof AuthenticatedAdminFleetRoute
+  AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
+  AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
+  AuthenticatedAdminTownsRoute: typeof AuthenticatedAdminTownsRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminBookingsIdRoute: typeof AuthenticatedAdminBookingsIdRoute
+  AuthenticatedAdminBookingsIndexRoute: typeof AuthenticatedAdminBookingsIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
+  AuthenticatedAdminComplianceRoute: AuthenticatedAdminComplianceRoute,
+  AuthenticatedAdminFleetRoute: AuthenticatedAdminFleetRoute,
+  AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
+  AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
+  AuthenticatedAdminTownsRoute: AuthenticatedAdminTownsRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminBookingsIdRoute: AuthenticatedAdminBookingsIdRoute,
+  AuthenticatedAdminBookingsIndexRoute: AuthenticatedAdminBookingsIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBookRoute: typeof AuthenticatedBookRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedBookingsIdRoute: typeof AuthenticatedBookingsIdRoute
@@ -215,6 +457,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBookRoute: AuthenticatedBookRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedBookingsIdRoute: AuthenticatedBookingsIdRoute,
