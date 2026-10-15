@@ -13,3 +13,4 @@
 - All pricing/assignment logic lives in the pure `src/lib/engine` module; it takes DB-loaded config (`src/lib/data.ts`) and never hard-codes prices — keeps quotes testable and admin-editable.
 - Bookings are only inserted by the `submitBooking` server function, which recomputes OSRM distance and the quote server-side — planners can't tamper with prices (no INSERT grant for them).
 - Cross-planner data the engine needs (truck occupancy, compliance, approval-by-token) is exposed via SECURITY DEFINER RPCs that return no personal data.
+- tsconfig keeps `strict` but disables exactOptionalPropertyTypes/noUncheckedIndexedAccess/noPropertyAccessFromIndexSignature — they fought generated Supabase types and Zod output.
