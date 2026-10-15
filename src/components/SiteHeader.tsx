@@ -53,8 +53,8 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             </Button>
           ) : (
             <>
-              <Button asChild variant={overlay ? "glass" : "ghost"} size="sm"><Link to="/login">Sign in</Link></Button>
-              <Button asChild variant="hero" size="sm"><Link to="/signup">Get started</Link></Button>
+              <Button asChild variant={overlay ? "glass" : "ghost"} size="sm"><Link to="/login">{t("Sign in")}</Link></Button>
+              <Button asChild variant="hero" size="sm"><Link to="/signup">{t("Get started")}</Link></Button>
             </>
           )}
           {user && (
