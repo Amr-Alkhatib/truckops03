@@ -20,6 +20,7 @@ import { Route as AuthenticatedBookRouteImport } from './routes/_authenticated/b
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
 import { Route as AuthenticatedAdminChangesRouteImport } from './routes/_authenticated/admin.changes'
@@ -88,6 +89,11 @@ const ApproveTokenRoute = ApproveTokenRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/admin/compliance': typeof AuthenticatedAdminComplianceRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/approve/$token': typeof ApproveTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/p/$token': typeof PTokenRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/changes': typeof AuthenticatedAdminChangesRoute
   '/_authenticated/admin/compliance': typeof AuthenticatedAdminComplianceRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/admin/calendar'
     | '/admin/changes'
     | '/admin/compliance'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/admin/calendar'
     | '/admin/changes'
     | '/admin/compliance'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/approve/$token'
     | '/auth/callback'
+    | '/p/$token'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/changes'
     | '/_authenticated/admin/compliance'
@@ -350,6 +362,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApproveTokenRoute: typeof ApproveTokenRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -429,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
@@ -602,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApproveTokenRoute: ApproveTokenRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
