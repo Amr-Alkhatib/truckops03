@@ -14,6 +14,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   const signOut = async () => {
     await qc.cancelQueries();
