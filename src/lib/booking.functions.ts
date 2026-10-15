@@ -158,3 +158,26 @@ export const respondApproval = createServerFn({ method: "POST" })
     }
     return { ok: true as const, status: status as string };
   });
+
+async function serverQuote(data: z.infer<typeof bookingSchema>) {
+  const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+  const P = await import("./planner.server");
+  const ctx = await P.loadCtx(admin, data.event_date);
+  const route = await roadDistance(ctx.config.depot, { lat: data.lat, lon: data.lon });
+  return buildQuote({ ...data, distance_km: route.km }, ctx, { preferTruckIds: data.truck_choice });
+}
+
+/** The authoritative quote (same server code the booking uses) — shown on the review step. */
+export const previewQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => bookingSchema.parse(d))
+  .handler(async ({ data }) => serverQuote(data));
+
+export const previewQuoteByToken = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ token: z.string().min(32).max(128), booking: bookingSchema }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+    const { data: link } = await admin.from("planner_links").select("active, expires_on").eq("token", data.token).maybeSingle();
+    if (!link || !link.active || (link.expires_on && link.expires_on < todayISO())) throw new Error("This booking link is invalid or has expired.");
+    return serverQuote(data.booking);
+  });
