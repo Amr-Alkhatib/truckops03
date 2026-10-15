@@ -1,0 +1,2 @@
+CREATE POLICY "staff read permits" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'permits' AND public.is_staff(auth.uid()));
+CREATE POLICY "staff upload permits" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'permits' AND public.is_staff(auth.uid()));
