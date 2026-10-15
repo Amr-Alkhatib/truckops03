@@ -326,6 +326,8 @@ function occupancyExclusions(ctx: EngineContext, date: string, others: DayBookin
 export interface QuoteOptions {
   /** use exactly these truck ids (re-pricing an existing booking) */
   forceTruckIds?: string[];
+  /** planner's choice among valid options; ignored if not valid on that day */
+  preferTruckIds?: string[];
   noSuggest?: boolean;
 }
 
@@ -437,6 +439,7 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
   let excluded = [...cs.excluded];
   let chosenIds: string[] = [];
   const reshuffles: Reshuffle[] = [];
+  const alternatives: string[][] = [];
 
   if (opts.forceTruckIds) {
     chosenIds = opts.forceTruckIds;
@@ -446,7 +449,21 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
     const { flex, fixedIds } = toSolver(others, ctx);
     const day = dayRules(ctx, input.event_date, fixedIds);
     const me: SolverBooking = { id: "__new", cands: cs.cands, current: null, locked: false, isNew: true };
-    const res = solveDay([me, ...flex], day);
+    const key = (ids: string[]) => [...ids].sort().join(",");
+    const pref = opts.preferTruckIds?.length ? cs.cands.find((c) => key(c.ids) === key(opts.preferTruckIds!)) : undefined;
+    let res = pref ? solveDay([{ ...me, cands: [pref] }, ...flex], day) : solveDay([me, ...flex], day);
+    if (pref && !res.ok) {
+      warnings.push({ code: "choice_unavailable", message: "The trucks you picked are no longer available together on this date — we proposed the best other option." });
+      res = solveDay([me, ...flex], day);
+    }
+    if (res.ok && !opts.noSuggest) {
+      const best = res.choice["__new"];
+      for (const c of cs.cands) {
+        if (alternatives.length >= 4) break;
+        if (key(c.ids) === key(best.ids) || c.vehicles !== best.vehicles) continue;
+        if (solveDay([{ ...me, cands: [c] }, ...flex], day).ok) alternatives.push(c.ids);
+      }
+    }
     for (const o of occupancyExclusions(ctx, input.event_date, others)) if (!excluded.some((e) => e.name === o.name)) excluded.push(o);
     if (res.ok) {
       chosenIds = res.choice["__new"].ids;
@@ -579,6 +596,7 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
     needsReview: false,
     excluded,
     permitCheck: permitReasons.length > 0,
+    alternatives,
     permitReasons,
     townUnknown,
     routeCheckTruckIds,

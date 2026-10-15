@@ -235,6 +235,8 @@ export interface Quote {
   routeCheckTruckIds: string[];
   /** other bookings that must move to make room */
   reshuffles: Reshuffle[];
+  /** other valid truck sets with the same number of vehicles (planner may swap) */
+  alternatives: string[][];
   /** concrete fixes computed by the solver when infeasible */
   suggestions: string[];
 }
