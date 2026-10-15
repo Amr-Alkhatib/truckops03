@@ -46,7 +46,7 @@ export function QuoteSummary({ quote, loading, compact }: { quote: Quote | null;
           <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">{t("Your trucks")}</p>
           <div className="flex flex-wrap gap-2">
             {quote.trucks.map((t) => (
-              <span key={t.id} className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium"><Truck className="size-3" />{t.name} · {t.cuisine}</span>
+              <span key={t.id} className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium"><Truck className="size-3" />{t.name} · {t.cuisine}{t.vegan ? " · vegan" : t.vegetarian ? " · vegetarian" : ""}</span>
             ))}
             {quote.espressoTruckId && <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium">☕ Espresso Express</span>}
           </div>

@@ -251,7 +251,7 @@ export interface Quote {
   totalNet: number;
   totalVat: number;
   totalGross: number;
-  trucks: Pick<Truck, "id" | "name" | "cuisine">[];
+  trucks: (Pick<Truck, "id" | "name" | "cuisine"> & { vegan?: boolean; vegetarian?: boolean })[];
   espressoTruckId: string | null;
   durationHours: number;
   isWeekend: boolean;

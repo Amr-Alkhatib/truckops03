@@ -693,7 +693,7 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
     totalNet,
     totalVat,
     totalGross,
-    trucks: trucks.map(({ id, name, cuisine }) => ({ id, name, cuisine })),
+    trucks: trucks.map(({ id, name, cuisine, vegan, vegetarian }) => ({ id, name, cuisine, vegan, vegetarian: !!(vegetarian || vegan) })),
     espressoTruckId: espresso?.id ?? null,
     durationHours,
     isWeekend: weekend,
