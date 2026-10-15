@@ -389,12 +389,14 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
   // Quiet hours (legacy per-town) and TA Lärm night time
   if (town?.quiet_hours_start && runsPastQuietHours(input.start_time, input.end_time, town.quiet_hours_start)) {
     const msg = `Your event runs past ${town.name}'s quiet hours (from ${town.quiet_hours_start.slice(0, 5)}).`;
-    if (isPublic && town.quiet_hours_mode === "block") blockers.push({ code: "quiet_hours", message: msg, hint: `End the event by ${town.quiet_hours_start.slice(0, 5)}.` });
+    if (isPublic && town.quiet_hours_mode === "block") permitReasons.push(`${msg} Staff must check with ${town.name} whether a late finish is allowed.`);
     else warnings.push({ code: "quiet_hours", message: `${msg} Please keep noise low after that time.` });
   }
   const night = town?.night_warn_from ?? "22:00";
-  if (isPublic && runsPastQuietHours(input.start_time, input.end_time, night))
+  if (isPublic && runsPastQuietHours(input.start_time, input.end_time, night)) {
+    permitReasons.push(`Ends after ${night.slice(0, 5)} on public ground (TA Lärm night time) — staff must confirm the late finish with ${town?.name ?? "the town"}.`);
     warnings.push({ code: "ta_laerm", message: `Your event runs past ${night.slice(0, 5)} — TA Lärm night time (22:00–06:00). Near residences, generators and music must be kept quiet.` });
+  }
 
   // Holidays
   if (holiday) warnings.push({ code: "holiday", message: `${dateDE} is a public holiday in Baden-Württemberg (${holiday.name}).` });
@@ -499,6 +501,14 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
   const trucks = chosen.filter((t) => !t.is_addon);
   const espresso = chosen.find((t) => t.is_addon) ?? null;
   const vehicles = trucks.length + (espresso ? 1 : 0);
+  {
+    const maxCap = Math.max(...ctx.trucks.filter((t) => !t.is_addon).map((t) => t.max_guests), 1);
+    const byGuests = Math.ceil(input.guests / maxCap);
+    if (trucks.length > byGuests) {
+      const why = [input.vegan / Math.max(input.guests, 1) * 100 > cfg.vegan_threshold_pct && "vegan", input.gluten_free > 0 && "gluten-free", input.halal > 0 && "halal"].filter(Boolean).join(", ");
+      notes.push(`${trucks.length - byGuests} extra truck(s) added: ${byGuests} would cover ${input.guests} guests, but no smaller combination serves all your ${why || "dietary"} guests.`);
+    }
+  }
   if (!opts.forceTruckIds && chosenIds.length) excluded = excluded.filter((e) => !chosen.some((t) => t.name === e.name));
 
   // Route clearance (HGV height) for trucks with a min_clearance_route rule
