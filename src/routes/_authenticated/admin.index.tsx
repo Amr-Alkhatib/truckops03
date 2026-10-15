@@ -7,27 +7,33 @@ import { eur, formatDateDE } from "@/lib/engine";
 import { todayISO } from "@/lib/data";
 import { WeekGrid } from "@/components/admin/WeekGrid";
 
-export const Route = createFileRoute("/_authenticated/admin/")({ component: Dashboard });
+export const Route = createFileRoute("/_authenticated/admin/")({
+  head: () => ({ meta: [{ title: "Dashboard — TruckOps back office" }, { name: "description", content: "Conflicts, permit checks and upcoming events." }] }),
+  component: Dashboard,
+});
 
 function Dashboard() {
   const q = useQuery({
     queryKey: ["admin-kpis"],
     queryFn: async () => {
       const today = todayISO();
-      const [b, l, t] = await Promise.all([
-        supabase.from("bookings").select("id, ref, status, event_date, total_net, total_gross, truck_ids, venue_name"),
+      const [b, l, t, n] = await Promise.all([
+        supabase.from("bookings").select("id, ref, status, event_date, total_net, total_gross, truck_ids, venue_name, conflict_reason, permit_reasons, route_clearance_status"),
         supabase.from("leads").select("id, reason, town, created_at, status").eq("status", "needs_review"),
         supabase.from("trucks").select("id, is_addon, status"),
+        supabase.from("staff_notifications").select("*").eq("read", false).order("created_at", { ascending: false }).limit(20),
       ]);
       const bookings = b.data ?? [];
-      const live = bookings.filter((x) => ["confirmed", "completed", "awaiting_approval"].includes(x.status));
+      const live = bookings.filter((x) => ["confirmed", "completed", "awaiting_approval", "permit_check", "conflict"].includes(x.status));
       const upcoming = live.filter((x) => x.event_date >= today).sort((a, b) => a.event_date.localeCompare(b.event_date));
       const revenue = bookings.filter((x) => ["confirmed", "completed"].includes(x.status));
       const fleet = (t.data ?? []).filter((x) => x.status === "active" && !x.is_addon).length;
       const in30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
       const truckDays = upcoming.filter((x) => x.event_date <= in30).reduce((s, x) => s + x.truck_ids.length, 0);
       return {
-        upcoming, leads: l.data ?? [],
+        upcoming, leads: l.data ?? [], notes: n.data ?? [],
+        conflicts: bookings.filter((x) => x.status === "conflict"),
+        permitChecks: bookings.filter((x) => x.status === "permit_check"),
         net: revenue.reduce((s, x) => s + Number(x.total_net), 0),
         gross: revenue.reduce((s, x) => s + Number(x.total_gross), 0),
         pending: bookings.filter((x) => x.status === "awaiting_approval").length,
@@ -56,6 +62,38 @@ function Dashboard() {
           </motion.div>
         ))}
       </div>
+      {(d.conflicts.length > 0 || d.permitChecks.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="glass rounded-2xl border border-destructive/30 p-5">
+            <h2 className="mb-3 font-semibold text-destructive">Conflicts ({d.conflicts.length})</h2>
+            {d.conflicts.map((b) => (
+              <Link key={b.id} to="/admin/bookings/$id" params={{ id: b.id }} className="block border-b py-2 text-sm last:border-0 hover:text-primary">
+                <strong>{b.ref}</strong> · {formatDateDE(b.event_date)} · {b.venue_name}<br /><span className="text-muted-foreground">{b.conflict_reason}</span>
+              </Link>
+            ))}
+            {!d.conflicts.length && <p className="text-sm text-muted-foreground">No conflicts.</p>}
+          </div>
+          <div className="glass rounded-2xl p-5">
+            <h2 className="mb-3 font-semibold">Permit checks ({d.permitChecks.length})</h2>
+            {d.permitChecks.map((b) => (
+              <Link key={b.id} to="/admin/bookings/$id" params={{ id: b.id }} className="block border-b py-2 text-sm last:border-0 hover:text-primary">
+                <strong>{b.ref}</strong> · {formatDateDE(b.event_date)} · {b.venue_name}{b.route_clearance_status === "unverified" && " · route clearance"}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {d.notes.length > 0 && (
+        <div className="glass rounded-2xl p-5">
+          <h2 className="mb-3 font-semibold">Notifications</h2>
+          {d.notes.map((x: any) => (
+            <div key={x.id} className="flex items-start justify-between gap-3 border-b py-2 text-sm last:border-0">
+              <span>{x.message} <span className="text-xs text-muted-foreground">· {new Date(x.created_at).toLocaleString("de-DE")}</span></span>
+              <button className="text-xs text-primary hover:underline" onClick={async () => { await supabase.from("staff_notifications").update({ read: true }).eq("id", x.id); q.refetch(); }}>Dismiss</button>
+            </div>
+          ))}
+        </div>
+      )}
       <WeekGrid />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="glass rounded-2xl p-5">

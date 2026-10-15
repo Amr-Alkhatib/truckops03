@@ -1,11 +1,12 @@
 # TruckOps roadmap
 - [x] Iteration 1–2: schema, engine, wizard, profile, back office, tests
 ## Iteration 3
-- [ ] 1 Auth: /auth/callback, resend w/ cooldown, forgot/reset password, redirect URLs
-- [ ] 2 System (locked) rules seeded + DB lock trigger + lock UI; Wurst clearance + ORS HGV check
-- [ ] 3 README rules: DD.MM.YYYY dates, German mobile, Bertha generator, computed fields read-only trigger, Policy notes page
-- [ ] 4 VAT rates table with valid_from/valid_to + sources, by event date
-- [ ] 5 Towns: real Stuttgart/Esslingen/Ludwigsburg data, fee models, Permit check status, auto-create town
-- [ ] 6 Compliance checklist: Reisegewerbe flag, alcohol flag, IfSG, ArbZG Sundays, min wage, BW holidays
-- [ ] 7 Crew-aware solver (crews, truck_crew, relief, assignments, advisory lock, conflicts) + tests
-- [ ] README data sources + algorithm
+- [x] 1 Auth: /auth/callback, resend w/ cooldown, forgot/reset password (redirect allow-list: user must check in Cloud settings)
+- [x] 2 Locked system rules + DB trigger + lock UI; Wurst clearance + ORS HGV check (needs ORS_API_KEY to auto-verify)
+- [x] 3 README rules + Policy notes page
+- [x] 4 VAT rates by date of service with sources
+- [x] 5 Towns registry real data, Permit check flow, auto-create towns + checklist
+- [x] 6 Compliance: docs, crews, Sunday tracking, min wage, flags, BW holidays
+- [x] 7 Solver wired into booking, approval and admin changes, advisory lock, conflicts
+- [x] README sources + algorithm
+- [x] Tests + production build

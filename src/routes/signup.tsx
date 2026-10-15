@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { CheckInbox } from "@/components/CheckInbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/signup")({
       { name: "description", content: "Create a planner account to book Rolling Feast food trucks." },
       { property: "og:title", content: "Create account — TruckOps" },
       { property: "og:description", content: "Sign up to get instant food-truck catering quotes." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Signup,
@@ -44,20 +47,14 @@ function Signup() {
     const { error } = await supabase.auth.signUp({
       email: r.data.email,
       password: r.data.password,
-      options: { emailRedirectTo: window.location.origin, data: { full_name: r.data.full_name } },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { full_name: r.data.full_name } },
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     setSent(true);
   };
 
-  if (sent)
-    return (
-      <AuthCard title="Check your inbox" subtitle={`We sent a confirmation link to ${form.email}.`}>
-        <p className="text-sm text-muted-foreground">Click the link to activate your account, then sign in.</p>
-        <Button asChild variant="hero" className="mt-6 w-full"><Link to="/login">Go to sign in</Link></Button>
-      </AuthCard>
-    );
+  if (sent) return <CheckInbox email={form.email} />;
 
   return (
     <AuthCard title="Create your planner account" subtitle="Book trucks, save your venues, track approvals.">
@@ -77,3 +74,4 @@ function Signup() {
     </AuthCard>
   );
 }
+

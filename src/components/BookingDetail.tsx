@@ -10,10 +10,13 @@ import { QuoteSummary } from "@/components/QuoteSummary";
 import { eur, formatDateDE, type Quote } from "@/lib/engine";
 import { downloadQuotePdf } from "@/lib/pdf";
 import { useAuth } from "@/hooks/use-auth";
+import { useReplan } from "@/hooks/use-replan";
+import { PermitPanel } from "@/components/admin/PermitPanel";
 
 export function BookingDetail({ id }: { id: string }) {
   const { isStaff } = useAuth();
   const qc = useQueryClient();
+  const replan = useReplan();
   const q = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
@@ -31,6 +34,7 @@ export function BookingDetail({ id }: { id: string }) {
     const { error } = await supabase.rpc("set_booking_status", { _id: id, _status: status as any, _note: note });
     if (error) return toast.error(error.message);
     toast.success(`Status: ${STATUS_LABELS[status]}`);
+    replan(`booking ${STATUS_LABELS[status].toLowerCase()}`, [q.data!.b.event_date]);
     qc.invalidateQueries({ queryKey: ["booking", id] });
     qc.invalidateQueries({ queryKey: ["admin-bookings"] });
     qc.invalidateQueries({ queryKey: ["my-bookings"] });
@@ -61,6 +65,7 @@ export function BookingDetail({ id }: { id: string }) {
             ["Company", `${b.company_name} · PO ${b.po_number}`],
             ["Billing", b.billing_address],
             ["Contact", `${b.contact_name} · ${b.contact_mobile}`],
+            ["Flags", `${b.sales_to_public ? "sales to public without order" : "pre-ordered catering"} · ${b.alcohol_served ? "alcohol served" : "no alcohol"}`],
             ["Road distance", `${Number(b.distance_km).toFixed(1)} km · ${b.distance_method} · ${new Date(b.distance_computed_at).toLocaleString("de-DE")}`],
             ...(b.approver_name ? [["Client approver", `${b.approver_name} (${b.approver_email})`]] : []),
             ...(b.client_response_reason ? [["Client comment", b.client_response_reason]] : []),
@@ -68,6 +73,10 @@ export function BookingDetail({ id }: { id: string }) {
             <div key={k}><dt className="text-xs uppercase tracking-wider text-muted-foreground">{k}</dt><dd className="font-medium">{v}</dd></div>
           ))}
         </dl>
+        {b.status === "conflict" && b.conflict_reason && (
+          <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"><strong>Conflict:</strong> {b.conflict_reason}</p>
+        )}
+        {isStaff && <PermitPanel b={b} />}
         {link && b.status === "awaiting_approval" && (
           <div className="flex gap-2">
             <Input readOnly value={link} className="font-mono text-xs" />

@@ -37,7 +37,7 @@ export function AddressAutocomplete({ value, onSelect, onType }: { value: string
       {open && results.length > 0 && (
         <ul className="glass absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-xl p-1 text-sm">
           {results.map((r) => (
-            <li key={r.label}>
+            <li key={`${r.label}-${i}`}>
               <button type="button" className="w-full rounded-lg px-3 py-2 text-left hover:bg-accent" onMouseDown={() => { picked.current = r.label; setQ(r.label); setOpen(false); onSelect(r); }}>
                 {r.label}
               </button>

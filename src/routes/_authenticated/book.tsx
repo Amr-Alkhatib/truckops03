@@ -57,12 +57,17 @@ type Form = {
   contact_mobile: string;
   approver_name: string;
   approver_email: string;
+  county: string;
+  state: string;
+  sales_to_public: boolean;
+  alcohol_served: boolean;
 };
 
 const EMPTY: Form = {
   package: "", event_date: "", start_time: "", end_time: "", venue_name: "", address: "", town: "", lat: null, lon: null,
   venue_type: "", has_400v: null, no_clearance_limit: false, clearance_m: "", space_m2: "", guests: "", vegan: "0", gluten_free: "0", halal: "0",
   espresso: false, company_name: "", billing_address: "", po_number: "", contact_name: "", contact_mobile: "", approver_name: "", approver_email: "",
+  county: "", state: "", sales_to_public: false, alcohol_served: false,
 };
 
 const STEPS = ["Package", "Date & time", "Venue", "Guests & diet", "Add-ons", "Company", "Review"];
@@ -71,7 +76,7 @@ const STEP_FIELDS: string[][] = [
   ["event_date", "start_time", "end_time"],
   ["venue_name", "address", "town", "lat", "lon", "venue_type", "has_400v", "clearance_m", "space_m2"],
   ["guests", "vegan", "gluten_free", "halal"],
-  ["espresso"],
+  ["espresso", "sales_to_public", "alcohol_served"],
   ["company_name", "billing_address", "po_number", "contact_name", "contact_mobile", "approver_name", "approver_email"],
   [],
 ];
@@ -168,6 +173,8 @@ function BookWizard() {
         halal: p.halal ?? 0,
         espresso: f.espresso,
         distance_km: routeQ.data.km,
+        sales_to_public: f.sales_to_public,
+        alcohol_served: f.alcohol_served,
       },
       _m(staticQ.data, dateQ.data),
     );
@@ -204,7 +211,7 @@ function BookWizard() {
       const res = await submit({ data: toPayload(f) as any });
       setResult(res);
       if (res.ok) {
-        toast.success(res.status === "confirmed" ? "Booking confirmed!" : "Sent for client approval");
+        toast.success(res.status === "confirmed" ? "Booking confirmed!" : res.status === "permit_check" ? "Booking received — permit check by our team" : "Sent for client approval");
         qc.invalidateQueries({ queryKey: ["my-bookings"] });
       } else if (res.leadCreated) toast.info("Our team will contact you about this location");
       else toast.error(res.error ?? "This booking can't be processed yet");
@@ -218,7 +225,7 @@ function BookWizard() {
   const applyPreset = (p: any) => {
     setF((x) => ({
       ...x,
-      venue_name: p.venue_name, address: p.address, town: p.town, lat: p.lat, lon: p.lon, venue_type: p.venue_type, has_400v: p.has_400v,
+      venue_name: p.venue_name, address: p.address, town: p.town, county: "", state: "", lat: p.lat, lon: p.lon, venue_type: p.venue_type, has_400v: p.has_400v,
       no_clearance_limit: p.clearance_m == null, clearance_m: p.clearance_m == null ? "" : String(p.clearance_m), space_m2: String(p.space_m2),
       start_time: x.package === "afterwork" ? x.start_time : p.start_time.slice(0, 5), end_time: x.package === "afterwork" ? x.end_time : p.end_time.slice(0, 5),
       guests: String(p.guests), vegan: String(p.vegan), gluten_free: String(p.gluten_free), halal: String(p.halal),
@@ -309,7 +316,7 @@ function BookWizard() {
                 <>
                   <Field label="Venue name" error={errors.venue_name}><Input value={f.venue_name} onChange={(e) => set("venue_name", e.target.value)} placeholder="e.g. Campus Vaihingen, Building 3" /></Field>
                   <Field label="Venue address" error={errors.address || errors.town}>
-                    <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town }))} />
+                    <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "", county: "", state: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town, county: r.county, state: r.state }))} />
                   </Field>
                   {cfg && (
                     <div className="space-y-2">
@@ -348,6 +355,7 @@ function BookWizard() {
               )}
 
               {step === 4 && (
+                <>
                 <button type="button" onClick={() => set("espresso", !f.espresso)} className={`w-full rounded-2xl border p-6 text-left transition-all ${f.espresso ? "border-primary shadow-elegant" : "hover:border-primary/50"}`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold">☕ Espresso Express</h3>
@@ -355,6 +363,13 @@ function BookWizard() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">Barista coffee bar, flat fee. Only together with at least one food truck. {f.espresso ? "✓ Added" : "Tap to add"}</p>
                 </button>
+                <Field label="Selling to the public without prior order?" hint="Normally no — corporate catering is pre-ordered. If yes, a Reisegewerbekarte (§55 GewO) is needed and Sundays/holidays are not possible.">
+                  <YesNo value={f.sales_to_public} onChange={(v) => set("sales_to_public", v)} />
+                </Field>
+                <Field label="Will alcohol be served?" hint="If yes, the town must issue a Gestattung (§12 GastG) — the booking goes to Permit check.">
+                  <YesNo value={f.alcohol_served} onChange={(v) => set("alcohol_served", v)} />
+                </Field>
+                </>
               )}
 
               {step === 5 && (
@@ -460,7 +475,8 @@ function SuccessView({ result, form }: { result: Extract<SubmitResult, { ok: tru
     <main className="mx-auto max-w-2xl px-4 py-16">
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-8 text-center">
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground"><Check className="size-7" /></div>
-        <h1 className="mt-4 text-3xl font-semibold">{result.status === "confirmed" ? "Booking confirmed" : "Awaiting client approval"}</h1>
+        <h1 className="mt-4 text-3xl font-semibold">{result.status === "confirmed" ? "Booking confirmed" : result.status === "permit_check" ? "Booking received — permit check" : "Awaiting client approval"}</h1>
+        {result.status === "permit_check" && <p className="mt-2 text-sm text-muted-foreground">Our team confirms the permit{result.routeNote ? " and the truck route clearance" : ""} before the booking is confirmed. {result.quote.permitReasons.join(" ")} {result.routeNote ?? ""}</p>}
         <p className="mt-1 text-muted-foreground">Reference {result.ref} · {eur(result.quote.totalGross)} gross</p>
         {link && (
           <div className="mt-6 rounded-2xl border p-4 text-left">

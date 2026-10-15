@@ -23,6 +23,18 @@ export function QuoteSummary({ quote, loading, compact }: { quote: Quote | null;
           </motion.div>
         ))}
       </AnimatePresence>
+      {quote.suggestions?.length > 0 && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <p className="mb-1 font-medium">What would work</p>
+          <ul className="list-disc space-y-0.5 pl-5">{quote.suggestions.map((s) => <li key={s}>{s}</li>)}</ul>
+        </div>
+      )}
+      {quote.permitCheck && (
+        <div className="rounded-xl bg-warning/15 p-3">
+          <p className="flex gap-2 font-medium"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />Permit check before confirmation</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-10 text-foreground/80">{quote.permitReasons.map((r) => <li key={r}>{r}</li>)}</ul>
+        </div>
+      )}
       {quote.warnings.map((w) => (
         <p key={w.code} className="flex gap-2 rounded-xl bg-warning/15 p-3 text-foreground"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />{w.message}</p>
       ))}
@@ -43,7 +55,7 @@ export function QuoteSummary({ quote, loading, compact }: { quote: Quote | null;
         {quote.lines.map((l, i) => (
           <div key={i} className="flex justify-between gap-4">
             <span className="text-muted-foreground">{l.label} <span className="text-xs opacity-70">({l.vatRate}%)</span></span>
-            <span className="tabular-nums">{eur(l.net)}</span>
+            <span className="tabular-nums">{l.tbc ? "to be confirmed" : eur(l.net)}</span>
           </div>
         ))}
       </div>

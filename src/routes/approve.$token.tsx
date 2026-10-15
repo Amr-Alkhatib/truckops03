@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { respondApproval } from "@/lib/booking.functions";
 import { SiteHeader } from "@/components/SiteHeader";
 import { QuoteSummary } from "@/components/QuoteSummary";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -37,11 +39,12 @@ function Approve() {
     },
   });
 
+  const respondFn = useServerFn(respondApproval);
   const respond = async (accept: boolean) => {
     setBusy(true);
-    const { error } = await supabase.rpc("respond_to_approval", { _token: token, _accept: accept, _reason: reason });
+    const res = await respondFn({ data: { token, accept, reason } }).catch((e) => ({ ok: false as const, error: String(e?.message ?? e) }));
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (!res.ok) return toast.error(res.error);
     toast.success(accept ? "Quote accepted — thank you!" : "Quote rejected");
     qc.invalidateQueries({ queryKey: ["approve", token] });
   };
