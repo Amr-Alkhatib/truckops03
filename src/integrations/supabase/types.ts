@@ -203,6 +203,7 @@ export type Database = {
           vegan: number
           venue_name: string
           venue_type: Database["public"]["Enums"]["venue_type"]
+          yard_distances: Json
         }
         Insert: {
           address: string
@@ -261,6 +262,7 @@ export type Database = {
           vegan: number
           venue_name: string
           venue_type: Database["public"]["Enums"]["venue_type"]
+          yard_distances?: Json
         }
         Update: {
           address?: string
@@ -319,6 +321,7 @@ export type Database = {
           vegan?: number
           venue_name?: string
           venue_type?: Database["public"]["Enums"]["venue_type"]
+          yard_distances?: Json
         }
         Relationships: [
           {
@@ -334,11 +337,15 @@ export type Database = {
         Row: {
           crew_member: string | null
           doc_type: string
+          done: boolean
+          due_on: string | null
           expires_on: string | null
+          file_path: string | null
           id: string
           label: string
           legal_basis: string
           notes: string
+          onboarding: string | null
           renew_every_months: number | null
           required: boolean
           source_title: string | null
@@ -346,15 +353,20 @@ export type Database = {
           status: string
           truck_id: string | null
           verified_on: string | null
+          yard_id: string | null
         }
         Insert: {
           crew_member?: string | null
           doc_type: string
+          done?: boolean
+          due_on?: string | null
           expires_on?: string | null
+          file_path?: string | null
           id?: string
           label: string
           legal_basis?: string
           notes?: string
+          onboarding?: string | null
           renew_every_months?: number | null
           required?: boolean
           source_title?: string | null
@@ -362,15 +374,20 @@ export type Database = {
           status?: string
           truck_id?: string | null
           verified_on?: string | null
+          yard_id?: string | null
         }
         Update: {
           crew_member?: string | null
           doc_type?: string
+          done?: boolean
+          due_on?: string | null
           expires_on?: string | null
+          file_path?: string | null
           id?: string
           label?: string
           legal_basis?: string
           notes?: string
+          onboarding?: string | null
           renew_every_months?: number | null
           required?: boolean
           source_title?: string | null
@@ -378,6 +395,7 @@ export type Database = {
           status?: string
           truck_id?: string | null
           verified_on?: string | null
+          yard_id?: string | null
         }
         Relationships: [
           {
@@ -385,6 +403,13 @@ export type Database = {
             columns: ["truck_id"]
             isOneToOne: false
             referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_docs_yard_id_fkey"
+            columns: ["yard_id"]
+            isOneToOne: false
+            referencedRelation: "yards"
             referencedColumns: ["id"]
           },
         ]
@@ -653,6 +678,41 @@ export type Database = {
         }
         Relationships: []
       }
+      route_cache: {
+        Row: {
+          computed_at: string
+          km: number
+          lat5: number
+          lon5: number
+          method: string
+          yard_id: string
+        }
+        Insert: {
+          computed_at?: string
+          km: number
+          lat5: number
+          lon5: number
+          method: string
+          yard_id: string
+        }
+        Update: {
+          computed_at?: string
+          km?: number
+          lat5?: number
+          lon5?: number
+          method?: string
+          yard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_cache_yard_id_fkey"
+            columns: ["yard_id"]
+            isOneToOne: false
+            referencedRelation: "yards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_notifications: {
         Row: {
           booking_id: string | null
@@ -902,8 +962,58 @@ export type Database = {
           },
         ]
       }
+      truck_yard_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          moved_by: string
+          note: string
+          truck_id: string
+          valid_from: string
+          valid_to: string | null
+          yard_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          moved_by?: string
+          note?: string
+          truck_id: string
+          valid_from: string
+          valid_to?: string | null
+          yard_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          moved_by?: string
+          note?: string
+          truck_id?: string
+          valid_from?: string
+          valid_to?: string | null
+          yard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_yard_assignments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truck_yard_assignments_yard_id_fkey"
+            columns: ["yard_id"]
+            isOneToOne: false
+            referencedRelation: "yards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trucks: {
         Row: {
+          available_from: string | null
+          available_to: string | null
           created_at: string
           cuisine: string
           footprint_m2: number
@@ -917,8 +1027,11 @@ export type Database = {
           needs_400v: boolean
           status: Database["public"]["Enums"]["truck_status"]
           vegan: boolean
+          vegetarian: boolean
         }
         Insert: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           cuisine: string
           footprint_m2: number
@@ -932,8 +1045,11 @@ export type Database = {
           needs_400v?: boolean
           status?: Database["public"]["Enums"]["truck_status"]
           vegan?: boolean
+          vegetarian?: boolean
         }
         Update: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           cuisine?: string
           footprint_m2?: number
@@ -947,6 +1063,7 @@ export type Database = {
           needs_400v?: boolean
           status?: Database["public"]["Enums"]["truck_status"]
           vegan?: boolean
+          vegetarian?: boolean
         }
         Relationships: []
       }
@@ -1013,6 +1130,45 @@ export type Database = {
         }
         Relationships: []
       }
+      yards: {
+        Row: {
+          active_from: string | null
+          address: string
+          created_at: string
+          id: string
+          lat: number
+          lon: number
+          name: string
+          notes: string
+          relief_crews: number
+          status: string
+        }
+        Insert: {
+          active_from?: string | null
+          address?: string
+          created_at?: string
+          id?: string
+          lat: number
+          lon: number
+          name: string
+          notes?: string
+          relief_crews?: number
+          status?: string
+        }
+        Update: {
+          active_from?: string | null
+          address?: string
+          created_at?: string
+          id?: string
+          lat?: number
+          lon?: number
+          name?: string
+          notes?: string
+          relief_crews?: number
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1069,6 +1225,7 @@ export type Database = {
           truck_ids: string[]
           vegan: number
           venue_type: string
+          yard_distances: Json
         }[]
       }
       day_snapshot: { Args: { _date: string }; Returns: string }
@@ -1083,6 +1240,17 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      move_truck_to_yard: {
+        Args: { _from: string; _note: string; _truck: string; _yard: string }
+        Returns: undefined
+      }
+      onboarding_open: {
+        Args: never
+        Returns: {
+          label: string
+          truck_id: string
+        }[]
+      }
       record_permit: {
         Args: {
           _fee: number

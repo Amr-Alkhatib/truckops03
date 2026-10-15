@@ -32,6 +32,7 @@ import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminTownsRouteImport } from './routes/_authenticated/admin.towns'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminYardsRouteImport } from './routes/_authenticated/admin.yards'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
 import { Route as AuthenticatedBookingsIdRouteImport } from './routes/_authenticated/bookings.$id'
 import { Route as AuthenticatedAdminBookingsIndexRouteImport } from './routes/_authenticated/admin.bookings.index'
@@ -157,6 +158,11 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminYardsRoute = AuthenticatedAdminYardsRouteImport.update({
+  id: '/yards',
+  path: '/yards',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedBookingsIndexRoute =
   AuthenticatedBookingsIndexRouteImport.update({
     id: '/bookings/',
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/towns': typeof AuthenticatedAdminTownsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/yards': typeof AuthenticatedAdminYardsRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/bookings/': typeof AuthenticatedBookingsIndexRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/towns': typeof AuthenticatedAdminTownsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/yards': typeof AuthenticatedAdminYardsRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bookings': typeof AuthenticatedBookingsIndexRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/_authenticated/admin/towns': typeof AuthenticatedAdminTownsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/yards': typeof AuthenticatedAdminYardsRoute
   '/_authenticated/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bookings/': typeof AuthenticatedBookingsIndexRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/admin/rules'
     | '/admin/towns'
     | '/admin/users'
+    | '/admin/yards'
     | '/bookings/$id'
     | '/admin/'
     | '/bookings/'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/admin/rules'
     | '/admin/towns'
     | '/admin/users'
+    | '/admin/yards'
     | '/bookings/$id'
     | '/admin'
     | '/bookings'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/rules'
     | '/_authenticated/admin/towns'
     | '/_authenticated/admin/users'
+    | '/_authenticated/admin/yards'
     | '/_authenticated/bookings/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/bookings/'
@@ -528,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/yards': {
+      id: '/_authenticated/admin/yards'
+      path: '/yards'
+      fullPath: '/admin/yards'
+      preLoaderRoute: typeof AuthenticatedAdminYardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/bookings/': {
       id: '/_authenticated/bookings/'
       path: '/bookings'
@@ -570,6 +589,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
   AuthenticatedAdminTownsRoute: typeof AuthenticatedAdminTownsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminYardsRoute: typeof AuthenticatedAdminYardsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBookingsIdRoute: typeof AuthenticatedAdminBookingsIdRoute
   AuthenticatedAdminBookingsIndexRoute: typeof AuthenticatedAdminBookingsIndexRoute
@@ -586,6 +606,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
   AuthenticatedAdminTownsRoute: AuthenticatedAdminTownsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminYardsRoute: AuthenticatedAdminYardsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminBookingsIdRoute: AuthenticatedAdminBookingsIdRoute,
   AuthenticatedAdminBookingsIndexRoute: AuthenticatedAdminBookingsIndexRoute,

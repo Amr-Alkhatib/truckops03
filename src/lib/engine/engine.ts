@@ -12,6 +12,7 @@ import type {
   Reshuffle,
   Town,
   Truck,
+  Yard,
   VatCategory,
   VatGroup,
 } from "./types";
@@ -77,7 +78,8 @@ export function permitFee(
       if (v == null) return { fee: null, detail: "rate unknown" };
       const units = footprints.reduce((s, fp) => s + Math.ceil(fp), 0);
       const fee = Math.max(units * v * days, town.min_fee ?? 0);
-      return { fee, detail: `${units} m² × ${eur(v)}${days > 1 ? ` × ${days} days` : ""}${town.min_fee ? `, min. ${eur(town.min_fee)}` : ""}` };
+      const est = (town.fee_table as any)?.estimate === "max" ? " — max. estimate, final per Gebührenbescheid" : "";
+      return { fee, detail: `${units} m² × ${eur(v)}${days > 1 ? ` × ${days} days` : ""}${town.min_fee ? `, min. ${eur(town.min_fee)}` : ""}${est}` };
     }
     case "per_truck":
       return v == null ? { fee: null, detail: "rate unknown" } : { fee: v * footprints.length * days, detail: `${footprints.length} vehicle(s) × ${eur(v)}` };
@@ -91,6 +93,43 @@ export function permitFee(
 }
 
 const docExpiredOn = (c: ComplianceItem, date: string) => (c.expires_on ? c.expires_on < date : c.expired);
+
+// ---------------------------------------------------------------------------
+// Yards: every truck leaves from its own yard (assignment valid on the event date)
+// ---------------------------------------------------------------------------
+
+const usesYards = (ctx: EngineContext) => !!ctx.yards?.length;
+
+export function yardOf(ctx: EngineContext, truckId: string, date: string): Yard | null {
+  if (!ctx.yards?.length) return null;
+  const a = (ctx.truckYards ?? [])
+    .filter((x) => x.truck_id === truckId && x.valid_from <= date && (!x.valid_to || x.valid_to >= date))
+    .sort((x, y) => y.valid_from.localeCompare(x.valid_from))[0];
+  return a ? ctx.yards.find((y) => y.id === a.yard_id) ?? null : null;
+}
+
+export const yardOpenOn = (y: Yard, date: string) => y.status !== "closed" && (!y.active_from || y.active_from <= date);
+
+/** Road km for this truck from its own yard (legacy: single depot distance). */
+export function truckKm(ctx: EngineContext, input: EventInput, t: Truck): number | null {
+  if (!usesYards(ctx)) return input.distance_km;
+  const y = yardOf(ctx, t.id, input.event_date);
+  if (!y) return null;
+  const v = input.yard_km?.[y.id];
+  return v == null ? null : Number(v);
+}
+
+/** "Your venue is 52.4 km from our Stuttgart yard and 12.1 km from our Heilbronn yard." */
+export function yardDistanceSummary(ctx: EngineContext, input: EventInput): string {
+  const parts = (ctx.yards ?? [])
+    .filter((y) => y.status !== "closed")
+    .map((y) => {
+      const km = input.yard_km?.[y.id];
+      return km == null ? `an unknown distance from our ${y.name}` : `${Number(km).toFixed(1)} km from our ${y.name}`;
+    });
+  if (!parts.length) return "";
+  return `Your venue is ${parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0]} by road.`;
+}
 
 // ---------------------------------------------------------------------------
 // Single-booking candidate generation
@@ -118,6 +157,23 @@ function staticExclusion(t: Truck, p: Prepared): string | null {
   const { input, ctx } = p;
   const date = formatDateDE(input.event_date);
   if (t.status === "retired") return `${t.name} is retired`;
+  if (t.available_from && input.event_date < t.available_from) {
+    const y = usesYards(ctx) ? ctx.yards!.find((yy) => yy.active_from && yy.active_from === t.available_from) : null;
+    return y ? `Our ${y.name} opens on ${formatDateDE(y.active_from)} — ${t.name} can serve events from then` : `${t.name} joins our fleet on ${formatDateDE(t.available_from)}`;
+  }
+  if (t.available_to && input.event_date > t.available_to) return `${t.name} is no longer available after ${formatDateDE(t.available_to)}`;
+  if (usesYards(ctx)) {
+    const y = yardOf(ctx, t.id, input.event_date);
+    if (!y) {
+      const next = (ctx.truckYards ?? []).filter((x) => x.truck_id === t.id && x.valid_from > input.event_date).sort((a, b) => a.valid_from.localeCompare(b.valid_from))[0];
+      const ny = next && ctx.yards!.find((yy) => yy.id === next.yard_id);
+      return ny ? `Our ${ny.name} opens on ${formatDateDE(next.valid_from)} — ${t.name} can serve events from then` : `${t.name} isn't assigned to a yard on ${date}`;
+    }
+    if (!yardOpenOn(y, input.event_date)) return y.active_from ? `Our ${y.name} opens on ${formatDateDE(y.active_from)} — ${t.name} can serve events from then` : `Our ${y.name} is closed`;
+    const km = truckKm(ctx, input, t);
+    if (km == null) return `${t.name}: road distance from our ${y.name} isn't available`;
+    if (km > ctx.config.max_distance_km) return `${t.name} would travel ${km.toFixed(1)} km from our ${y.name} — we go max ${ctx.config.max_distance_km} km`;
+  }
   for (const r of activeRules(ctx)) {
     if (!r.truck_ids.includes(t.id)) continue;
     if (r.rule_type === "never_assign") return `${t.name} is never assignable (${r.description})`;
@@ -223,10 +279,12 @@ export function candidatesFor(input: EventInput, ctx: EngineContext, p = prepare
       gens: gens * cfg.generator_fee,
       permit: pf,
       relief: long ? all.length : 0,
+      reliefByYard: long && usesYards(ctx) ? all.reduce((m, t) => { const y = yardOf(ctx, t.id, input.event_date)?.id ?? "none"; m[y] = (m[y] ?? 0) + 1; return m; }, {} as Record<string, number>) : undefined,
+      km: all.reduce((s2, t) => s2 + (truckKm(ctx, input, t) ?? 0), 0),
       usage: all.reduce((s, t) => s + (ctx.usage?.[t.id] ?? 0), 0),
     };
   });
-  cands.sort((a, b) => a.vehicles - b.vehicles || a.gens - b.gens || a.permit - b.permit || a.ids.join().localeCompare(b.ids.join()));
+  cands.sort((a, b) => a.vehicles - b.vehicles || (a.km ?? 0) - (b.km ?? 0) || a.gens - b.gens || a.permit - b.permit || a.ids.join().localeCompare(b.ids.join()));
 
   const failures: Issue[] = [];
   if (!cands.length) {
@@ -244,6 +302,12 @@ export function candidatesFor(input: EventInput, ctx: EngineContext, p = prepare
         failures.push({ code: "space", message: `The trucks needed for ${input.guests} guests need at least ${minFp} m², but your venue has ${input.space_m2} m².`, hint: "Try finding a larger space." });
       else failures.push({ code: "pairing", message: `No combination of available trucks satisfies our pairing and crew rules for ${input.guests} guests on ${date}.` });
     }
+    if (usesYards(ctx) && excluded.some((e) => /km from our|yard opens/.test(e.reason))) {
+      const reach = foodCandidates.map((t) => t.name);
+      const cap = foodCandidates.reduce((s2, t) => s2 + t.max_guests, 0);
+      const prefix = `${yardDistanceSummary(ctx, input)} ${reach.length ? `Only ${reach.length > 1 ? reach.slice(0, -1).join(", ") + " and " + reach[reach.length - 1] : reach[0]} can reach you (max ${cap} guests)` : "None of our trucks can reach you"}`;
+      for (const f of failures) f.message = `${prefix} — ${f.message.charAt(0).toLowerCase()}${f.message.slice(1)}`;
+    }
     const best = evals.filter((e) => e.structural).reduce((m, e) => Math.max(m, e.cap), 0);
     if (best > 0 && best < input.guests) failures[failures.length - 1].hint = `Try reducing guests to ${best}.`;
   }
@@ -260,6 +324,7 @@ function dayRules(ctx: EngineContext, date: string, fixedIds: string[]): DayRule
     crews: ctx.crews ?? [],
     rules: activeRules(ctx),
     reliefCap: ctx.config.second_crew_enabled ? ctx.config.relief_crews_per_day ?? 2 : 0,
+    reliefCapByYard: usesYards(ctx) ? Object.fromEntries(ctx.yards!.map((y) => [y.id, ctx.config.second_crew_enabled ? y.relief_crews : 0])) : undefined,
     fixedIds,
   };
 }
@@ -353,9 +418,15 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
   if (input.event_date < ctx.today) blockers.push({ code: "past_date", message: "The event date is in the past." });
 
   // Distance
-  const zoneFee = zoneFeeFor(input.distance_km, cfg.travel_zones);
-  if (input.distance_km > cfg.max_distance_km || zoneFee == null)
-    blockers.push({ code: "distance", message: `We don't travel further than ${cfg.max_distance_km} km from our ${cfg.depot.label} — your venue is ${input.distance_km.toFixed(1)} km by road.` });
+  const legacyZone = zoneFeeFor(input.distance_km, cfg.travel_zones);
+  if (!usesYards(ctx)) {
+    if (input.distance_km > cfg.max_distance_km || legacyZone == null)
+      blockers.push({ code: "distance", message: `We don't travel further than ${cfg.max_distance_km} km from our ${cfg.depot?.label ?? "depot"} — your venue is ${input.distance_km.toFixed(1)} km by road.` });
+  } else {
+    const kms = Object.values(input.yard_km ?? {}).filter((v): v is number => v != null).map(Number);
+    if (kms.length && Math.min(...kms) > cfg.max_distance_km)
+      blockers.push({ code: "distance", message: `We don't travel further than ${cfg.max_distance_km} km from our yards. ${yardDistanceSummary(ctx, input)}` });
+  }
 
   // VAT by date of service
   const vat: Record<VatCategory, number> = { food: 0, beverage: 0, services: 0, permit: 0 };
@@ -476,7 +547,20 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
       const probe = (o: SolverOptions) => solveDay([me, ...flex], day, o).ok;
       const lockDays = cfg.lock_days ?? 7;
       if (probe({ relaxRelief: true }))
-        blockers.push({ code: "relief_crews", message: `All ${day.reliefCap} relief crews for long events (> ${cfg.crew_max_hours} h) are already booked on ${dateDE}.`, hint: `Shorten the event to ≤ ${cfg.crew_max_hours} h.` });
+      {
+        if (day.reliefCapByYard) {
+          const yardIds = new Set(cs.cands.flatMap((c) => Object.keys(c.reliefByYard ?? {})));
+          const names = [...yardIds].map((id) => ctx.yards!.find((y) => y.id === id)?.name).filter(Boolean) as string[];
+          const none = names.filter((n) => (ctx.yards!.find((y) => y.name === n)?.relief_crews ?? 0) === 0);
+          blockers.push({
+            code: "relief_crews",
+            message: none.length
+              ? `No second crew available at the ${none.join(" or ")} for a ${durationHours.toFixed(1).replace(/\.0$/, "")} h event — shorten to ${cfg.crew_max_hours} h or our team will arrange cover.`
+              : `All second crews at the ${names.join(" and ")} are already booked on ${dateDE} for long events (> ${cfg.crew_max_hours} h) — shorten to ${cfg.crew_max_hours} h or our team will arrange cover.`,
+            hint: `Shorten the event to ≤ ${cfg.crew_max_hours} h.`,
+          });
+        } else blockers.push({ code: "relief_crews", message: `All ${day.reliefCap} relief crews for long events (> ${cfg.crew_max_hours} h) are already booked on ${dateDE}.`, hint: `Shorten the event to ≤ ${cfg.crew_max_hours} h.` });
+      }
       else if (probe({ relaxCrews: true }))
         blockers.push({ code: "crew_conflict", message: `The crews for the trucks your event needs are already working other events on ${dateDE} (Taco Loco and Salsa Sister share one crew${weekend ? "; on weekends Dough Bros borrows it too" : ""}).` });
       else if (probe({ relaxLocks: true }))
@@ -543,7 +627,30 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
   const minSpend = cfg.min_spend_per_truck * foodTrucks;
   add("food", perGuest >= minSpend ? `Catering: ${input.guests} guests × ${eur(cfg.per_guest_price)}` : `Catering minimum spend: ${foodTrucks} truck(s) × ${eur(cfg.min_spend_per_truck)}`, Math.max(perGuest, minSpend), "food");
   if (espresso) add("espresso", "Espresso Express coffee bar (flat)", cfg.espresso_price, "beverage");
-  if (zoneFee != null && input.distance_km <= cfg.max_distance_km) add("travel", `Travel zone (${input.distance_km.toFixed(1)} km by road)`, zoneFee, "services");
+  const travel: Quote["travel"] = [];
+  if (!usesYards(ctx)) {
+    if (legacyZone != null && input.distance_km <= cfg.max_distance_km) add("travel", `Travel zone (${input.distance_km.toFixed(1)} km by road)`, legacyZone, "services");
+  } else {
+    const sorted = [...cfg.travel_zones].sort((a, b) => a.max_km - b.max_km);
+    const vehiclesForTravel = [...trucks, ...(espresso && cfg.charge_addon_travel !== false ? [espresso] : [])];
+    for (const t of vehiclesForTravel) {
+      const km = truckKm(ctx, input, t);
+      if (km == null) continue;
+      const zi = sorted.findIndex((z) => km <= z.max_km);
+      if (zi < 0) continue;
+      const y = yardOf(ctx, t.id, input.event_date);
+      travel.push({ truck_id: t.id, truck: t.name, yard: y?.name ?? null, km, fee: sorted[zi].fee });
+      add("travel", `Travel – ${t.name} from ${y?.name ?? "yard"}, ${km.toFixed(1)} km, Zone ${zi + 1}`, sorted[zi].fee, "services");
+    }
+  }
+  const zoneFee = usesYards(ctx) ? (travel.length ? travel.reduce((s2, x) => s2 + x.fee, 0) : null) : legacyZone;
+
+  // Onboarding trucks: may be quoted, but staff must finish their documents before confirming
+  if (ctx.onboardingOpen?.length)
+    for (const t of chosen) {
+      const open = ctx.onboardingOpen.filter((o) => o.truck_id === t.id).map((o) => o.label.replace(` — ${t.name}`, ""));
+      if (open.length) permitReasons.push(`${t.name} is still onboarding (${open.join(", ")}) — our team completes these before confirming.`);
+    }
   const genTrucks = trucks.filter((t) => t.needs_400v && !input.has_400v);
   if (genTrucks.length) add("generator", `Generator for ${genTrucks.map((t) => t.name).join(", ")} (no 400 V on site)`, genTrucks.length * cfg.generator_fee, "services");
   if (needsSecondCrew && cfg.second_crew_enabled)
@@ -591,6 +698,7 @@ export function buildQuote(input: EventInput, ctx: EngineContext, opts: QuoteOpt
     durationHours,
     isWeekend: weekend,
     zoneFee,
+    travel,
     permitRequired: isPublic,
     needsApproval: basis > cfg.approval_threshold,
     needsReview: false,

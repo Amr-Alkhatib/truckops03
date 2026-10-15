@@ -2,7 +2,7 @@
 // (browser client or per-request server client).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { Blackout, ComplianceItem, CrewLink, DayBooking, EngineConfig, EngineContext, Holiday, PairRule, Town, Truck, VatRate } from "./engine";
+import type { TruckYard, Yard, Blackout, ComplianceItem, CrewLink, DayBooking, EngineConfig, EngineContext, Holiday, PairRule, Town, Truck, VatRate } from "./engine";
 import { addDays } from "./engine";
 
 type Client = SupabaseClient<Database>;
@@ -24,10 +24,13 @@ export interface StaticData {
   towns: Town[];
   vatRates: VatRate[];
   crews: CrewLink[];
+  yards: Yard[];
+  truckYards: TruckYard[];
+  onboardingOpen: { truck_id: string; label: string }[];
 }
 
 export async function loadStatic(sb: Client): Promise<StaticData> {
-  const [c, t, b, r, w, v, k] = await Promise.all([
+  const [c, t, b, r, w, v, k, y, ty, ob] = await Promise.all([
     sb.from("app_config").select("config").eq("id", 1).single(),
     sb.from("trucks").select("*").order("name"),
     sb.from("truck_blackouts").select("*"),
@@ -35,8 +38,11 @@ export async function loadStatic(sb: Client): Promise<StaticData> {
     sb.from("towns").select("*").order("name"),
     sb.from("vat_rates").select("category, rate, valid_from, valid_to"),
     sb.from("truck_crew").select("truck_id, crew_id, day_type"),
+    sb.from("yards").select("id, name, lat, lon, active_from, status, relief_crews").order("created_at"),
+    sb.from("truck_yard_assignments").select("truck_id, yard_id, valid_from, valid_to"),
+    sb.rpc("onboarding_open"),
   ]);
-  for (const x of [c, t, b, r, w, v, k]) if (x.error) throw x.error;
+  for (const x of [c, t, b, r, w, v, k, y, ty, ob]) if (x.error) throw x.error;
   return {
     config: c.data!.config as unknown as EngineConfig,
     trucks: (t.data ?? []).map(mapTruck),
@@ -45,6 +51,9 @@ export async function loadStatic(sb: Client): Promise<StaticData> {
     towns: (w.data ?? []).map(mapTown),
     vatRates: (v.data ?? []).map((x: any) => ({ ...x, rate: Number(x.rate) })) as VatRate[],
     crews: (k.data ?? []) as CrewLink[],
+    yards: (y.data ?? []).map((x: any) => ({ ...x, lat: Number(x.lat), lon: Number(x.lon), relief_crews: Number(x.relief_crews) })) as Yard[],
+    truckYards: (ty.data ?? []) as TruckYard[],
+    onboardingOpen: (ob.data ?? []) as { truck_id: string; label: string }[],
   };
 }
 
@@ -61,6 +70,7 @@ export function mapDayBooking(r: any): DayBooking {
       booking_id: r.id, package: r.package, event_date: r.event_date, start_time: r.start_time.slice(0, 5), end_time: r.end_time.slice(0, 5),
       venue_type: r.venue_type, town: r.town, has_400v: r.has_400v, clearance_m: nn(r.clearance_m), space_m2: Number(r.space_m2),
       guests: r.guests, vegan: r.vegan, gluten_free: r.gluten_free, halal: r.halal, espresso: r.espresso, distance_km: Number(r.distance_km),
+      yard_km: Object.fromEntries(Object.entries(r.yard_distances ?? {}).map(([k, v]: [string, any]) => [k, v?.km == null ? null : Number(v.km)])),
       sales_to_public: r.sales_to_public, alcohol_served: r.alcohol_served, street_group: r.street_group,
     },
   };

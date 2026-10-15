@@ -24,11 +24,16 @@ export function reshuffleChanges(ctx: EngineContext, moves: { bookingId: string;
   const byId = new Map(ctx.trucks.map((t) => [t.id, t.name]));
   return moves.map((m) => {
     const b = ctx.bookings!.find((x) => x.id === m.bookingId)!;
-    const q = buildQuote(b.input!, ctx, { forceTruckIds: m.to });
     const from = b.truckIds.map((id) => byId.get(id)).join(", ") || "none";
     const to = m.to.map((id) => byId.get(id)).join(", ");
+    // confirmed bookings keep their stored prices (no silent repricing)
+    if (b.status === "confirmed") {
+      const note = `Trucks re-assigned by the planner: ${from} → ${to} (${reason}); confirmed prices kept`;
+      return { id: m.bookingId, truck_ids: m.to, note, notify: note, kind: "reassign" } as Record<string, unknown>;
+    }
+    const q = buildQuote(b.input!, ctx, { forceTruckIds: m.to });
     const note = `Trucks re-assigned by the planner: ${from} → ${to} (${reason})`;
-    return { id: m.bookingId, truck_ids: m.to, quote: q, total_net: q.totalNet, total_gross: q.totalGross, note, notify: note, kind: "reassign" };
+    return { id: m.bookingId, truck_ids: m.to, quote: q, total_net: q.totalNet, total_gross: q.totalGross, note, notify: note, kind: "reassign" } as Record<string, unknown>;
   });
 }
 
@@ -39,8 +44,14 @@ export async function recalcDate(admin: Admin, date: string, actor: string, reas
     const ctx = await loadCtx(admin, date);
     const day = (ctx.bookings ?? []).filter((b) => b.event_date === date);
     if (!day.length) return { date, changed: 0, conflicts: 0 };
+    const filled = await fillYardKm(admin, ctx, day.map((b) => b.id));
     const plan = planDay(date, ctx);
-    const changes: any[] = reshuffleChanges(ctx, plan.changed.map((id) => ({ bookingId: id, to: plan.assign[id] })), reason);
+    const changes: any[] = Object.entries(filled).map(([id, yd]) => ({ id, yard_distances: yd }));
+    for (const ch of reshuffleChanges(ctx, plan.changed.map((id) => ({ bookingId: id, to: plan.assign[id] })), reason)) {
+      const ex = changes.find((c) => c.id === ch.id);
+      if (ex) Object.assign(ex, ch);
+      else changes.push(ch);
+    }
     // bookings in conflict that fit again → restore their status
     const ids = day.map((b) => b.id);
     const { data: rows } = await admin.from("bookings").select("id, status, approval_token, client_response_reason, permit_status, route_clearance_status, conflict_reason").in("id", ids);
@@ -90,3 +101,40 @@ export async function ensureTownChecklist(admin: Admin, townId: string, townName
 }
 
 export { fetchHolidaysBW, mapDayBooking };
+
+/** Road km from each yard to the venue, cached per venue (≈1 m) and yard. */
+export async function yardDistances(admin: Admin, yards: { id: string; lat: number; lon: number; status: string }[], dest: { lat: number; lon: number }) {
+  const { roadDistance } = await import("./geo");
+  const lat5 = Math.round(dest.lat * 1e5) / 1e5, lon5 = Math.round(dest.lon * 1e5) / 1e5;
+  const out: Record<string, { km: number; method: string; at: string } | null> = {};
+  for (const y of yards.filter((y) => y.status !== "closed")) {
+    const { data: hit } = await admin.from("route_cache").select("km, method, computed_at").eq("yard_id", y.id).eq("lat5", lat5).eq("lon5", lon5).maybeSingle();
+    if (hit) { out[y.id] = { km: Number(hit.km), method: hit.method, at: hit.computed_at }; continue; }
+    try {
+      const r = await roadDistance(y, dest);
+      const at = new Date().toISOString();
+      out[y.id] = { km: r.km, method: r.method, at };
+      await admin.from("route_cache").upsert({ yard_id: y.id, lat5, lon5, km: r.km, method: r.method, computed_at: at });
+    } catch {
+      out[y.id] = null;
+    }
+  }
+  return out;
+}
+
+/** Fill road distances from yards a booking hasn't been measured from yet (e.g. a new yard). */
+export async function fillYardKm(admin: Admin, ctx: EngineContext, ids: string[]) {
+  const yards = (ctx.yards ?? []).filter((y) => y.status !== "closed");
+  const out: Record<string, Record<string, { km: number; method: string; at: string } | null>> = {};
+  const missing = (ctx.bookings ?? []).filter((b) => ids.includes(b.id) && b.input && yards.some((y) => !(y.id in (b.input!.yard_km ?? {}))));
+  if (!missing.length) return out;
+  const { data } = await admin.from("bookings").select("id, lat, lon").in("id", missing.map((m) => m.id));
+  for (const row of data ?? []) {
+    const b = missing.find((m) => m.id === row.id)!;
+    const todo = yards.filter((y) => !(y.id in (b.input!.yard_km ?? {})));
+    const yd = await yardDistances(admin, todo as any, { lat: row.lat, lon: row.lon });
+    b.input!.yard_km = { ...(b.input!.yard_km ?? {}), ...Object.fromEntries(Object.entries(yd).map(([k, v]) => [k, v?.km ?? null])) };
+    out[row.id] = yd;
+  }
+  return out;
+}

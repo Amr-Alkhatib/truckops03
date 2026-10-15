@@ -10,6 +10,10 @@ export interface Candidate {
   gens: number;
   permit: number;
   relief: number;
+  /** relief crews needed per yard (second shifts) */
+  reliefByYard?: Record<string, number>;
+  /** total road km of all vehicles from their own yards */
+  km?: number;
   usage: number;
 }
 
@@ -40,6 +44,8 @@ export interface DayRules {
   crews: CrewLink[];
   rules: PairRule[];
   reliefCap: number;
+  /** relief crews per yard; when set, replaces reliefCap */
+  reliefCapByYard?: Record<string, number>;
   /** trucks already fixed on that day (unknown bookings / legacy occupancy) */
   fixedIds: string[];
 }
@@ -102,7 +108,17 @@ export function solveDay(bookings: SolverBooking[], day: DayRules, opts: SolverO
   let nodes = 0;
   const choice: Record<string, Candidate> = {};
 
-  const dfs = (i: number, usedT: Set<string>, usedC: Set<string>, relief: number, cost: number[]) => {
+  const fitsRelief = (used: Record<string, number>, c: Candidate) => {
+    if (!day.reliefCapByYard || !c.reliefByYard) return true;
+    return Object.entries(c.reliefByYard).every(([y, n]) => (used[y] ?? 0) + n <= (day.reliefCapByYard![y] ?? 0));
+  };
+  const addRelief = (used: Record<string, number>, c: Candidate) => {
+    if (!c.reliefByYard) return used;
+    const n = { ...used };
+    for (const [y, k] of Object.entries(c.reliefByYard)) n[y] = (n[y] ?? 0) + k;
+    return n;
+  };
+  const dfs = (i: number, usedT: Set<string>, usedC: Set<string>, relief: number, cost: number[], reliefY: Record<string, number> = {}) => {
     if (nodes++ > maxNodes) return;
     if (i === prepared.length) {
       if (!best || lexLess(cost, best.cost)) best = { cost, choice: { ...choice } };
@@ -111,7 +127,7 @@ export function solveDay(bookings: SolverBooking[], day: DayRules, opts: SolverO
     const b = prepared[i];
     for (const c of b.cands) {
       if (c.ids.some((id) => usedT.has(id))) continue;
-      if (!opts.relaxRelief && relief + c.relief > day.reliefCap) continue;
+      if (!opts.relaxRelief && (day.reliefCapByYard ? !fitsRelief(reliefY, c) : relief + c.relief > day.reliefCap)) continue;
       const nextT = new Set(usedT);
       c.ids.forEach((id) => nextT.add(id));
       let nextC = usedC;
@@ -123,14 +139,15 @@ export function solveDay(bookings: SolverBooking[], day: DayRules, opts: SolverO
         crews.forEach((x) => nextC.add(x));
       }
       const change = !b.isNew && b.current && !sameSet(c.ids, b.current) ? 1 : 0;
-      const nc = [cost[0] + change, cost[1] + c.vehicles, cost[2] + c.gens, cost[3] + c.permit, cost[4] + c.usage];
+      // lexicographic: fewest trucks, fewest changes, shortest trips, generator, permit, utilisation
+      const nc = [cost[0] + c.vehicles, cost[1] + change, cost[2] + Math.round((c.km ?? 0) * 10), cost[3] + c.gens, cost[4] + c.permit, cost[5] + c.usage];
       if (best && !lexLess(nc, best.cost)) continue;
       choice[b.id] = c;
-      dfs(i + 1, nextT, nextC, relief + c.relief, nc);
+      dfs(i + 1, nextT, nextC, relief + c.relief, nc, addRelief(reliefY, c));
       delete choice[b.id];
     }
   };
-  dfs(0, baseT, opts.relaxCrews ? new Set() : baseC, 0, [0, 0, 0, 0, 0]);
+  dfs(0, baseT, opts.relaxCrews ? new Set() : baseC, 0, [0, 0, 0, 0, 0, 0]);
 
   if (!best) return { ok: false, choice: {}, cost: [], changed: [] };
   const found = best as { cost: number[]; choice: Record<string, Candidate> };

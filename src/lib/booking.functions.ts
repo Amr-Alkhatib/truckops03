@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { bookingSchema } from "./booking-schema";
-import { buildQuote, findTown, type Quote } from "./engine";
-import { hgvHeightRoute, roadDistance } from "./geo";
+import { buildQuote, findTown, yardOf, type Quote } from "./engine";
+import { hgvHeightRoute } from "./geo";
 import { todayISO } from "./data";
 
 export type SubmitResult =
@@ -61,14 +61,14 @@ async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, act
     }
 
     const s0 = await P.loadCtx(admin, data.event_date);
-    let route;
-    try {
-      route = await roadDistance(s0.config.depot, { lat: data.lat, lon: data.lon });
-    } catch {
-      return { ok: false, quote: null, error: "We couldn't calculate the road distance right now. Please try again in a minute." };
-    }
+    const yd = await P.yardDistances(admin, s0.yards ?? [], { lat: data.lat, lon: data.lon });
+    const known = Object.values(yd).filter(Boolean) as { km: number; method: string; at: string }[];
+    if (!known.length) return { ok: false, quote: null, error: "We couldn't calculate the road distance right now. Please try again in a minute." };
+    const nearest = known.reduce((a, b) => (b.km < a.km ? b : a));
+    const route = { km: nearest.km, method: nearest.method };
     const id = crypto.randomUUID();
-    const input = { ...data, distance_km: route.km, booking_id: id };
+    const yard_km = Object.fromEntries(Object.entries(yd).map(([k, v]) => [k, v?.km ?? null]));
+    const input = { ...data, distance_km: route.km, yard_km, booking_id: id };
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const snap = await P.snapshot(admin, data.event_date);
@@ -84,9 +84,11 @@ async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, act
       if (quote.routeCheckTruckIds.length) {
         const rule = ctx.rules.find((r) => r.rule_type === "min_clearance_route");
         const h = Number(rule?.params?.min_clearance_m ?? 3.6);
-        const hgv = await hgvHeightRoute(process.env.ORS_API_KEY, ctx.config.depot, { lat: data.lat, lon: data.lon }, h);
+        const wy = yardOf(ctx, quote.routeCheckTruckIds[0], data.event_date);
+        const wkm = wy ? yd[wy.id]?.km ?? route.km : route.km;
+        const hgv = wy ? await hgvHeightRoute(process.env.ORS_API_KEY, wy, { lat: data.lat, lon: data.lon }, h) : null;
         if (!hgv) { routeStatus = "unverified"; routeNote = "Route clearance not verified (no HGV routing key configured) — staff confirmation required."; }
-        else if (!hgv.ok || (hgv.km != null && Math.abs(hgv.km - route.km) / route.km > 0.2)) { routeStatus = "unverified"; routeNote = `Route clearance not verified: ${hgv.note}${hgv.km ? ` (differs from the ${route.km} km road route)` : ""} — staff confirmation required.`; }
+        else if (!hgv.ok || (hgv.km != null && Math.abs(hgv.km - wkm) / wkm > 0.2)) { routeStatus = "unverified"; routeNote = `Route clearance not verified: ${hgv.note}${hgv.km ? ` (differs from the ${wkm} km road route)` : ""} — staff confirmation required.`; }
         else { routeStatus = "verified"; routeNote = hgv.note; }
       }
 
@@ -102,7 +104,7 @@ async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, act
         clearance_m: data.clearance_m, space_m2: data.space_m2, guests: data.guests, vegan: data.vegan, gluten_free: data.gluten_free, halal: data.halal,
         espresso: data.espresso, company_name: data.company_name, billing_address: data.billing_address, po_number: data.po_number, contact_name: data.contact_name,
         contact_mobile: data.contact_mobile, approver_name: quote.needsApproval ? data.approver_name : null, approver_email: quote.needsApproval ? data.approver_email : null,
-        approval_token: token, client_response_reason: null, truck_ids: truckIds, distance_km: route.km, distance_method: route.method, distance_computed_at: now,
+        approval_token: token, client_response_reason: null, truck_ids: truckIds, distance_km: route.km, distance_method: route.method, distance_computed_at: now, yard_distances: yd,
         quote, total_net: quote.totalNet, total_gross: quote.totalGross, created_at: now, updated_at: now,
         county: data.county || null, state: data.state || null, sales_to_public: data.sales_to_public, alcohol_served: data.alcohol_served,
         permit_status: permitStatus, permit_reasons: quote.permitReasons, permit_number: null, permit_fee: null, permit_issued_on: null, permit_file_path: null,
@@ -163,8 +165,11 @@ async function serverQuote(data: z.infer<typeof bookingSchema>) {
   const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
   const P = await import("./planner.server");
   const ctx = await P.loadCtx(admin, data.event_date);
-  const route = await roadDistance(ctx.config.depot, { lat: data.lat, lon: data.lon });
-  return buildQuote({ ...data, distance_km: route.km }, ctx, { preferTruckIds: data.truck_choice });
+  const yd = await P.yardDistances(admin, ctx.yards ?? [], { lat: data.lat, lon: data.lon });
+  const kms = Object.values(yd).filter(Boolean).map((v) => v!.km);
+  if (!kms.length) throw new Error("We couldn't calculate the road distance right now.");
+  const yard_km = Object.fromEntries(Object.entries(yd).map(([k, v]) => [k, v?.km ?? null]));
+  return buildQuote({ ...data, distance_km: Math.min(...kms), yard_km }, ctx, { preferTruckIds: data.truck_choice });
 }
 
 /** The authoritative quote (same server code the booking uses) — shown on the review step. */

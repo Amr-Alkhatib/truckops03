@@ -16,13 +16,13 @@ import { Field, YesNo } from "@/components/Field";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { QuoteSummary } from "@/components/QuoteSummary";
 import { RouteMap } from "@/components/RouteMap";
-import { useDateData, useRoute, useStaticData } from "@/hooks/use-engine";
+import { useDateData, useStaticData, useYardRoutes } from "@/hooks/use-engine";
 import { bookingSchema } from "@/lib/booking-schema";
 import { previewQuote, previewQuoteByToken, submitBooking, submitBookingByToken, type SubmitResult } from "@/lib/booking.functions";
 import { usePackages } from "@/hooks/use-packages";
 import { useI18n } from "@/lib/i18n";
 import { buildQuote, eur, formatDateDE } from "@/lib/engine";
-import { makeContext as _m } from "@/lib/data";
+import { makeContext as _m, todayISO } from "@/lib/data";
 import { downloadQuotePdf } from "@/lib/pdf";
 
 
@@ -121,7 +121,8 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
   const cfg = staticQ.data?.config;
   const dateQ = useDateData(f.event_date || null);
   const dest = f.lat != null && f.lon != null ? { lat: f.lat, lon: f.lon } : null;
-  const routeQ = useRoute(cfg?.depot, dest);
+  const yr = useYardRoutes(staticQ.data?.yards, dest);
+  const routeQ = { data: yr.done && yr.nearest ? { km: yr.nearest.km, geometry: yr.nearest.geometry, method: yr.nearest.method } : undefined, isFetching: yr.loading, isLoading: yr.loading, isError: yr.error };
 
   const profileQ = useQuery({
     enabled: !link,
@@ -188,13 +189,14 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
         halal: p.halal ?? 0,
         espresso: f.espresso,
         distance_km: routeQ.data.km,
+        yard_km: yr.yardKm,
         sales_to_public: f.sales_to_public,
         alcohol_served: f.alcohol_served,
       },
       _m(staticQ.data, dateQ.data),
       { preferTruckIds: f.truck_choice ?? undefined },
     );
-  }, [f, staticQ.data, dateQ.data, routeQ.data]);
+  }, [f, staticQ.data, dateQ.data, routeQ.data?.km, JSON.stringify(yr.yardKm)]);
 
   const payloadKey = JSON.stringify(toPayload(f));
   useEffect(() => {
@@ -352,9 +354,16 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   </Field>
                   {cfg && (
                     <div className="space-y-2">
-                      <RouteMap depot={cfg.depot} dest={dest} geometry={routeQ.data?.geometry} />
+                      <RouteMap depot={yr.nearest?.yard ?? staticQ.data!.yards[0]} dest={dest} geometry={routeQ.data?.geometry} />
                       {routeQ.isFetching && <p className="text-xs text-muted-foreground">Measuring road distance…</p>}
-                      {routeQ.data && <p className="text-sm"><strong>{routeQ.data.km.toFixed(1)} km</strong> by road from our depot · town: <strong>{f.town || "unknown"}</strong></p>}
+                      {routeQ.data && (
+                        <p className="text-sm">
+                          {staticQ.data!.yards.filter((y) => y.status !== "closed").map((y, i) => (
+                            <span key={y.id}>{i > 0 && " · "}<strong>{yr.yardKm[y.id] != null ? `${Number(yr.yardKm[y.id]).toFixed(1)} km` : "?"}</strong> from our {y.name}{y.active_from && y.active_from > todayISO() ? ` (opens ${formatDateDE(y.active_from)})` : ""}</span>
+                          ))}
+                          {" "}· town: <strong>{f.town || "unknown"}</strong>
+                        </p>
+                      )}
                       {routeQ.isError && <p className="text-sm text-destructive">We couldn't measure the road distance. Try again shortly.</p>}
                     </div>
                   )}

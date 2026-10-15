@@ -1,0 +1,2 @@
+ALTER TABLE public.compliance_docs DROP CONSTRAINT compliance_docs_doc_type_check;
+ALTER TABLE public.compliance_docs ADD CONSTRAINT compliance_docs_doc_type_check CHECK (doc_type = ANY (ARRAY['reisegewerbekarte','food_registration','ifsg_belehrung','tuev','liability_insurance','gewerbeanmeldung','gaststaetten_gestattung','vehicle_registration','vehicle_insurance','betriebsuebergang','sondernutzung','other']));

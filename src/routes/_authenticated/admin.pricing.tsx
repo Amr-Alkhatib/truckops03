@@ -22,12 +22,10 @@ export const Route = createFileRoute("/_authenticated/admin/pricing")({
           { path: "weekend_surcharge_pct", label: "Weekend surcharge (%)", type: "number" },
           { path: "generator_fee", label: "Generator fee (€)", type: "number" },
           { path: "espresso_price", label: "Espresso Express flat price (€)", type: "number" },
-          { path: "max_distance_km", label: "Max travel distance (km)", type: "number" },
+          { path: "max_distance_km", label: "Max road distance per truck from its own yard (km)", type: "number" },
+          { path: "charge_addon_travel", label: "Charge travel for add-on vehicles (Espresso Express)", type: "bool" },
           { path: "approval_threshold", label: "Client approval threshold (€)", type: "number" },
           { path: "approval_basis", label: "Threshold applies to", type: "select", options: [{ value: "net", label: "Net total" }, { value: "gross", label: "Gross total" }] },
-          { path: "depot.label", label: "Depot label", type: "text" },
-          { path: "depot.lat", label: "Depot latitude", type: "number" },
-          { path: "depot.lon", label: "Depot longitude", type: "number" },
         ]}
       >
         {(cfg, set) => (
@@ -51,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/admin/pricing")({
                 </div>
               ))}
               <Button size="sm" variant="outline" onClick={() => set({ ...cfg, travel_zones: [...cfg.travel_zones, { max_km: 50, fee: 150 }] })}><Plus /> Add zone</Button>
-              <p className="mt-2 text-xs text-muted-foreground">Beyond the max travel distance, bookings are blocked.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Charged once per vehicle from its own yard. A truck further than the max distance from its yard is not sent. Yards are managed under Yards.</p>
             </div>
           </div>
         )}
