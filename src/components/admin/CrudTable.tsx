@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/Field";
 
-export type ColType = "text" | "number" | "bool" | "select" | "date" | "time" | "trucks" | "truck";
+export type ColType = "text" | "number" | "bool" | "select" | "date" | "time" | "trucks" | "truck" | "tags";
 export interface Col {
   key: string;
   label: string;
@@ -57,6 +57,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
       if (c.type === "number") v = v === "" || v == null ? (c.nullable ? null : 0) : Number(v);
       if ((c.type === "date" || c.type === "time" || c.type === "truck") && v === "") v = null;
       if (c.type === "select" && c.nullable && v === "") v = null;
+      if (c.type === "tags") v = (Array.isArray(v) ? v : String(v ?? "").split(",")).map((x: string) => x.trim()).filter(Boolean);
       row[c.key] = v;
     }
     const res = edit.id ? await (supabase.from(table as any) as any).update(row).eq("id", edit.id) : await (supabase.from(table as any) as any).insert(row);
@@ -81,6 +82,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
     if (c.render) return c.render(r);
     const v = r[c.key];
     if (c.type === "bool") return v ? "✓" : "—";
+    if (c.type === "tags") return (v ?? []).join(", ") || "—";
     if (c.type === "trucks") return (v ?? []).map(tName).join(", ");
     if (c.type === "truck") return v ? tName(v) : "—";
     if (c.type === "select") return c.options?.find((o) => o.value === v)?.label ?? v ?? "—";
@@ -147,6 +149,8 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
                         return <button key={t.id} type="button" onClick={() => setEdit({ ...edit, [c.key]: on ? sel.filter((x) => x !== t.id) : [...sel, t.id] })} className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-primary/10 text-primary" : ""}`}>{t.name}</button>;
                       })}
                     </div>
+                  ) : c.type === "tags" ? (
+                    <Input placeholder="Comma-separated" value={Array.isArray(edit[c.key]) ? edit[c.key].join(", ") : edit[c.key] ?? ""} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.value })} />
                   ) : c.type === "date" ? (
                     <DateInputDE value={edit[c.key]} onChange={(v) => setEdit({ ...edit, [c.key]: v })} />
                   ) : (
