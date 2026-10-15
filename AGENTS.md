@@ -14,3 +14,5 @@
 - Bookings are only inserted by the `submitBooking` server function, which recomputes OSRM distance and the quote server-side — planners can't tamper with prices (no INSERT grant for them).
 - Cross-planner data the engine needs (truck occupancy, compliance, approval-by-token) is exposed via SECURITY DEFINER RPCs that return no personal data.
 - tsconfig keeps `strict` but disables exactOptionalPropertyTypes/noUncheckedIndexedAccess/noPropertyAccessFromIndexSignature — they fought generated Supabase types and Zod output.
+- Truck assignment is a day-level solver (`src/lib/engine/solver.ts`) run identically in the browser (preview) and server; only `commit_day_plan` (advisory lock + snapshot check) may write trucks/totals — a trigger blocks every other write to computed booking fields.
+- System rules (`pair_rules.is_system`) are immutable via DB trigger; legal/fee seed data carries source_url/verified_on/status and unknowns stay NULL so the engine routes them to "Permit check" instead of guessing.
