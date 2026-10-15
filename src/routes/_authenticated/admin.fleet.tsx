@@ -15,12 +15,15 @@ export const Route = createFileRoute("/_authenticated/admin/fleet")({
           { key: "cuisine", label: "Cuisine", type: "text" },
           { key: "max_guests", label: "Max guests", type: "number" },
           { key: "vegan", label: "Vegan", type: "bool" },
+          { key: "vegetarian", label: "Vegetarian (info only — doesn't count as vegan)", type: "bool" },
           { key: "gluten_free", label: "Gluten-free", type: "bool" },
           { key: "halal", label: "Halal", type: "bool" },
           { key: "height_m", label: "Height m", type: "number" },
           { key: "footprint_m2", label: "Footprint m²", type: "number" },
           { key: "needs_400v", label: "Needs 400V", type: "bool" },
           { key: "is_addon", label: "Add-on only", type: "bool" },
+          { key: "available_from", label: "Available from", type: "date", nullable: true, hideInTable: true },
+          { key: "available_to", label: "Available until", type: "date", nullable: true, hideInTable: true },
           { key: "status", label: "Status", type: "select", options: [{ value: "active", label: "Active" }, { value: "retired", label: "Retired (never bookable)" }] },
         ]}
       />
