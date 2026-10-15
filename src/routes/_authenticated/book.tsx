@@ -211,7 +211,7 @@ function BookWizard() {
       const res = await submit({ data: toPayload(f) as any });
       setResult(res);
       if (res.ok) {
-        toast.success(res.status === "confirmed" ? "Booking confirmed!" : "Sent for client approval");
+        toast.success(res.status === "confirmed" ? "Booking confirmed!" : res.status === "permit_check" ? "Booking received — permit check by our team" : "Sent for client approval");
         qc.invalidateQueries({ queryKey: ["my-bookings"] });
       } else if (res.leadCreated) toast.info("Our team will contact you about this location");
       else toast.error(res.error ?? "This booking can't be processed yet");
@@ -355,6 +355,7 @@ function BookWizard() {
               )}
 
               {step === 4 && (
+                <>
                 <button type="button" onClick={() => set("espresso", !f.espresso)} className={`w-full rounded-2xl border p-6 text-left transition-all ${f.espresso ? "border-primary shadow-elegant" : "hover:border-primary/50"}`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold">☕ Espresso Express</h3>
@@ -362,6 +363,13 @@ function BookWizard() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">Barista coffee bar, flat fee. Only together with at least one food truck. {f.espresso ? "✓ Added" : "Tap to add"}</p>
                 </button>
+                <Field label="Selling to the public without prior order?" hint="Normally no — corporate catering is pre-ordered. If yes, a Reisegewerbekarte (§55 GewO) is needed and Sundays/holidays are not possible.">
+                  <YesNo value={f.sales_to_public} onChange={(v) => set("sales_to_public", v)} />
+                </Field>
+                <Field label="Will alcohol be served?" hint="If yes, the town must issue a Gestattung (§12 GastG) — the booking goes to Permit check.">
+                  <YesNo value={f.alcohol_served} onChange={(v) => set("alcohol_served", v)} />
+                </Field>
+                </>
               )}
 
               {step === 5 && (
@@ -467,7 +475,8 @@ function SuccessView({ result, form }: { result: Extract<SubmitResult, { ok: tru
     <main className="mx-auto max-w-2xl px-4 py-16">
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-8 text-center">
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground"><Check className="size-7" /></div>
-        <h1 className="mt-4 text-3xl font-semibold">{result.status === "confirmed" ? "Booking confirmed" : "Awaiting client approval"}</h1>
+        <h1 className="mt-4 text-3xl font-semibold">{result.status === "confirmed" ? "Booking confirmed" : result.status === "permit_check" ? "Booking received — permit check" : "Awaiting client approval"}</h1>
+        {result.status === "permit_check" && <p className="mt-2 text-sm text-muted-foreground">Our team confirms the permit{result.routeNote ? " and the truck route clearance" : ""} before the booking is confirmed. {result.quote.permitReasons.join(" ")} {result.routeNote ?? ""}</p>}
         <p className="mt-1 text-muted-foreground">Reference {result.ref} · {eur(result.quote.totalGross)} gross</p>
         {link && (
           <div className="mt-6 rounded-2xl border p-4 text-left">
