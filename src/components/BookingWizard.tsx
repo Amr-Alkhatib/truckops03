@@ -349,7 +349,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
               {step === 2 && (
                 <>
                   <Field label="Venue name" error={errors.venue_name}><Input value={f.venue_name} onChange={(e) => set("venue_name", e.target.value)} placeholder="e.g. Campus Vaihingen, Building 3" /></Field>
-                  <Field label="Venue address" error={errors.address || errors.town}>
+                  <Field label="Venue address" error={errors.address || errors.town} hint={t("Address suggestions and the map come from OpenStreetMap.")}>
                     <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "", county: "", state: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town, county: r.county, state: r.state }))} />
                   </Field>
                   {cfg && (
@@ -422,6 +422,10 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                     <Field label="Contact person" error={errors.contact_name}><Input value={f.contact_name} onChange={(e) => set("contact_name", e.target.value)} /></Field>
                     <Field label="Contact mobile" error={errors.contact_mobile}><Input type="tel" value={f.contact_mobile} onChange={(e) => set("contact_mobile", e.target.value)} placeholder="+49 170 1234567" /></Field>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("We use these details only to quote, plan and carry out this booking.")}{" "}
+                    <Link to="/privacy" className="text-primary hover:underline">{t("See the privacy policy.")}</Link>
+                  </p>
                   {quote?.needsApproval && cfg && (
                     <div className="space-y-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
                       <p className="text-sm">This order is above {eur(cfg.approval_threshold)} ({cfg.approval_basis}), so a second person at your company must approve it.</p>

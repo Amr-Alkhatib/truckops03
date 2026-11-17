@@ -59,6 +59,8 @@ bun run dev        # or: npm run dev
 bunx vitest run    # run the test suite
 ```
  
+**Privacy contact.** The privacy policy at `/privacy` reads its contact address from the `PRIVACY_CONTACT_EMAIL` secret (Lovable Cloud → Secrets, or the environment when running locally). Until it is set, the page says the contact is not configured.
+
 The first account that signs up becomes admin automatically (database trigger). Everyone after that is a planner. Admins promote others under **Back office → Users**.
  
 ---

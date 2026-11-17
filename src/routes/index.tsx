@@ -105,9 +105,6 @@ function Index() {
           </motion.div>
         ))}
       </section>
-      <footer className="border-t py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Rolling Feast Event Catering · Depot Stuttgart city centre
-      </footer>
     </div>
   );
 }
