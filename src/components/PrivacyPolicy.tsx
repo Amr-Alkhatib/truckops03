@@ -35,7 +35,7 @@ function Contact({ email, missing }: { email: string | null; missing: string }) 
 function Controller({ email, missing, emailLabel, country }: { email: string | null; missing: string; emailLabel: string; country: string }) {
   return (
     <address className="mt-3 border-l-4 border-primary pl-4 not-italic text-foreground">
-      Amr Alkhatib<br />Heilbronn, {country}<br />{emailLabel}: <Contact email={email} missing={missing} />
+      Amr Alkhatib<br />74072 Heilbronn, {country}<br />{emailLabel}: <Contact email={email} missing={missing} />
     </address>
   );
 }
