@@ -26,6 +26,12 @@ const DE: Record<string, string> = {
   "Get an instant quote": "Sofort-Angebot erhalten", "Book the Afterwork Party": "Afterwork Party buchen",
   "Now also serving the Heilbronn region": "Jetzt auch in der Region Heilbronn",
   "Accept": "Annehmen", "Reject": "Ablehnen", "Download PDF": "PDF herunterladen", "Booking link": "Buchungslink",
+  "Privacy": "Datenschutz", "Privacy policy": "Datenschutzerklärung", "Last updated": "Stand", "TruckOps demo": "TruckOps-Demo",
+  "What TruckOps stores, why, and who else is involved.": "Was TruckOps speichert, wozu, und wer sonst beteiligt ist.",
+  "We use these details only to quote, plan and carry out this booking.": "Wir nutzen diese Angaben nur, um diese Buchung anzubieten, zu planen und durchzuführen.",
+  "Address suggestions and the map come from OpenStreetMap.": "Adressvorschläge und Karte stammen von OpenStreetMap.",
+  "See the privacy policy.": "Mehr dazu in der Datenschutzerklärung.",
+  "We store your name and email to run your planner account.": "Wir speichern Ihren Namen und Ihre E-Mail-Adresse, um Ihr Planer-Konto zu führen.",
 };
 
 export function translate(s: string, l: Lang = lang) {

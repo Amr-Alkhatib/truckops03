@@ -8,6 +8,7 @@ import { AuthCard } from "@/components/AuthCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/lib/i18n";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your name").max(120),
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 function Signup() {
+  const { t } = useI18n();
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -66,6 +68,10 @@ function Signup() {
             {errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>}
           </div>
         ))}
+        <p className="text-xs text-muted-foreground">
+          {t("We store your name and email to run your planner account.")}{" "}
+          <Link to="/privacy" className="text-primary hover:underline">{t("See the privacy policy.")}</Link>
+        </p>
         <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
