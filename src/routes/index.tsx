@@ -44,17 +44,17 @@ function Index() {
             </p>
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium">{t("Now also serving the Heilbronn region")}</p>
             <h1 className="text-5xl font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">
-              Street food, <em className="text-gradient not-italic">served corporate.</em>
+              {t("Street food,")} <em className="text-gradient not-italic">{t("served corporate.")}</em>
             </h1>
             <p className="mt-6 max-w-xl text-lg opacity-80">
-              Rolling Feast brings a curated fleet of food trucks to your campus, rooftop or square — with permits, power and crew sorted. From our yards in Stuttgart and Heilbronn. One click, one honest quote.
+              {t("Rolling Feast brings a curated fleet of food trucks to your campus, rooftop or square — with permits, power and crew sorted. From our yards in Stuttgart and Heilbronn. One click, one honest quote.")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="hero" size="lg" className="h-12 px-7 text-base">
                 <Link to="/book">{t("Get an instant quote")} <ArrowRight /></Link>
               </Button>
               <Button asChild variant="glass" size="lg" className="h-12 px-7 text-base">
-                <Link to="/login">Planner sign in</Link>
+                <Link to="/login">{t("Planner sign in")}</Link>
               </Button>
             </div>
           </motion.div>
@@ -71,13 +71,13 @@ function Index() {
               <Skeleton className="mt-2 h-5 w-40" />
             ) : (
               <p className="mt-1 text-muted-foreground">
-                {best?.start_time.slice(0, 5)}–{best?.end_time.slice(0, 5)} · from {eur(cfg?.per_guest_price ?? 0)} net / guest
+                {best?.start_time.slice(0, 5)}–{best?.end_time.slice(0, 5)} · {t("from {price} net / guest", { price: eur(cfg?.per_guest_price ?? 0) })}
               </p>
             )}
             <ul className="mt-5 space-y-2 text-sm">
-              <li className="flex gap-2"><Users className="size-4 text-primary" /> Auto-matched trucks for your guest count & diets</li>
-              <li className="flex gap-2"><FileCheck2 className="size-4 text-primary" /> Permits and second crew shift included in the quote</li>
-              <li className="flex gap-2"><ShieldCheck className="size-4 text-primary" /> Fixed road distance — no surprises</li>
+              <li className="flex gap-2"><Users className="size-4 text-primary" /> {t("Auto-matched trucks for your guest count & diets")}</li>
+              <li className="flex gap-2"><FileCheck2 className="size-4 text-primary" /> {t("Permits and second crew shift included in the quote")}</li>
+              <li className="flex gap-2"><ShieldCheck className="size-4 text-primary" /> {t("Fixed road distance — no surprises")}</li>
             </ul>
             <Button asChild variant="hero" className="mt-6 w-full">
               <Link to="/book" search={{ package: best?.slug ?? "afterwork" }}>{t("Book the Afterwork Party")}</Link>
@@ -93,8 +93,8 @@ function Index() {
           { t: "Approval built in", d: "Bigger orders get a one-click approval link for your finance colleague. No account needed." },
         ].map((f, i) => (
           <motion.div key={f.t} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-semibold">{f.t}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{f.d}</p>
+            <h3 className="text-xl font-semibold">{t(f.t)}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t(f.d)}</p>
           </motion.div>
         ))}
       </section>

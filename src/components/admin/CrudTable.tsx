@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/Field";
+import { useI18n } from "@/lib/i18n";
 
 export type ColType = "text" | "number" | "bool" | "select" | "date" | "time" | "trucks" | "truck" | "tags";
 export interface Col {
@@ -34,10 +35,11 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
   replan?: boolean;
   allowAdd?: boolean;
 }) {
+  const { t } = useI18n();
   const runReplan = useReplan();
   const qc = useQueryClient();
   const trucks = useTrucks();
-  const tName = (id: string) => trucks.data?.find((t) => t.id === id)?.name ?? "—";
+  const tName = (id: string) => trucks.data?.find((tr) => tr.id === id)?.name ?? "—";
   const q = useQuery({
     queryKey: ["crud", table],
     queryFn: async () => {
@@ -62,7 +64,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
     }
     const res = edit.id ? await (supabase.from(table as any) as any).update(row).eq("id", edit.id) : await (supabase.from(table as any) as any).insert(row);
     if (res.error) return toast.error(res.error.message);
-    toast.success("Saved — quotes use this immediately");
+    toast.success(t("Saved — quotes use this immediately"));
     qc.invalidateQueries({ queryKey: ["crud", table] });
     qc.invalidateQueries({ queryKey: ["engine-static"] });
     qc.invalidateQueries({ queryKey: ["trucks-admin"] });
@@ -70,7 +72,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
     if (replan) runReplan(`${title} changed`);
   };
   const del = async (id: string) => {
-    if (!confirm("Delete this entry?")) return;
+    if (!confirm(t("Delete this entry?"))) return;
     const { error } = await (supabase.from(table as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["crud", table] });
@@ -85,7 +87,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
     if (c.type === "tags") return (v ?? []).join(", ") || "—";
     if (c.type === "trucks") return (v ?? []).map(tName).join(", ");
     if (c.type === "truck") return v ? tName(v) : "—";
-    if (c.type === "select") return c.options?.find((o) => o.value === v)?.label ?? v ?? "—";
+    if (c.type === "select") { const o = c.options?.find((x) => x.value === v); return o ? t(o.label) : v ?? "—"; }
     if (c.type === "date" && v) return v.split("-").reverse().join(".");
     return v ?? "—";
   };
@@ -93,14 +95,14 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
   return (
     <div className="glass rounded-3xl p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">{title}</h2>
-        {allowAdd && <Button variant="hero" size="sm" onClick={() => setEdit({ ...defaults })}><Plus /> Add</Button>}
+        <h2 className="text-xl font-semibold">{t(title)}</h2>
+        {allowAdd && <Button variant="hero" size="sm" onClick={() => setEdit({ ...defaults })}><Plus /> {t("Add")}</Button>}
       </div>
       {q.isLoading ? <Skeleton className="h-40" /> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-              {cols.filter((c) => !c.hideInTable).map((c) => <th key={c.key} className="px-2 py-2 font-medium">{c.label}</th>)}<th />
+              {cols.filter((c) => !c.hideInTable).map((c) => <th key={c.key} className="px-2 py-2 font-medium">{t(c.label)}</th>)}<th />
             </tr></thead>
             <tbody>
               {q.data!.map((r) => (
@@ -108,11 +110,11 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
                   {cols.filter((c) => !c.hideInTable).map((c) => <td key={c.key} className="px-2 py-2 align-top">{display(c, r)}</td>)}
                   <td className="whitespace-nowrap px-2 py-2 text-right">
                     {lockedKey && r[lockedKey] ? (
-                      <span title="Locked system rule — cannot be edited, disabled or deleted" className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground"><Lock className="size-3" /> System</span>
+                      <span title={t("Locked system rule — cannot be edited, disabled or deleted")} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground"><Lock className="size-3" /> {t("System")}</span>
                     ) : (
                       <>
-                        <Button size="icon" variant="ghost" onClick={() => setEdit({ ...r })}><Pencil /></Button>
-                        {allowDelete && <Button size="icon" variant="ghost" onClick={() => del(r.id)}><Trash2 /></Button>}
+                        <Button size="icon" variant="ghost" onClick={() => setEdit({ ...r })} aria-label={t("Edit")}><Pencil /></Button>
+                        {allowDelete && <Button size="icon" variant="ghost" onClick={() => del(r.id)} aria-label={t("Delete")}><Trash2 /></Button>}
                       </>
                     )}
                   </td>
@@ -124,33 +126,33 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
       )}
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader><DialogTitle>{edit?.id ? "Edit" : "Add"} · {title}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t(edit?.id ? "Edit" : "Add")} · {t(title)}</DialogTitle></DialogHeader>
           {edit && (
             <div className="grid gap-4 sm:grid-cols-2">
               {cols.map((c) => (
                 <Field key={c.key} label={c.label}>
                   {c.type === "bool" ? (
-                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!edit[c.key]} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.checked })} /> {c.label}</label>
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!edit[c.key]} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.checked })} /> {t(c.label)}</label>
                   ) : c.type === "select" ? (
                     <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={edit[c.key] ?? ""} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.value })}>
                       {c.nullable && <option value="">—</option>}
-                      {c.options!.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {c.options!.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
                     </select>
                   ) : c.type === "truck" ? (
                     <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={edit[c.key] ?? ""} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.value })}>
-                      <option value="">— none (company-wide)</option>
-                      {trucks.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      <option value="">{t("— none (company-wide)")}</option>
+                      {trucks.data?.map((tr) => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
                     </select>
                   ) : c.type === "trucks" ? (
                     <div className="flex flex-wrap gap-1.5">
-                      {trucks.data?.map((t) => {
+                      {trucks.data?.map((tr) => {
                         const sel: string[] = edit[c.key] ?? [];
-                        const on = sel.includes(t.id);
-                        return <button key={t.id} type="button" onClick={() => setEdit({ ...edit, [c.key]: on ? sel.filter((x) => x !== t.id) : [...sel, t.id] })} className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-primary/10 text-primary" : ""}`}>{t.name}</button>;
+                        const on = sel.includes(tr.id);
+                        return <button key={tr.id} type="button" onClick={() => setEdit({ ...edit, [c.key]: on ? sel.filter((x) => x !== tr.id) : [...sel, tr.id] })} className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-primary/10 text-primary" : ""}`}>{tr.name}</button>;
                       })}
                     </div>
                   ) : c.type === "tags" ? (
-                    <Input placeholder="Comma-separated" value={Array.isArray(edit[c.key]) ? edit[c.key].join(", ") : edit[c.key] ?? ""} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.value })} />
+                    <Input placeholder={t("Comma-separated")} value={Array.isArray(edit[c.key]) ? edit[c.key].join(", ") : edit[c.key] ?? ""} onChange={(e) => setEdit({ ...edit, [c.key]: e.target.value })} />
                   ) : c.type === "date" ? (
                     <DateInputDE value={edit[c.key]} onChange={(v) => setEdit({ ...edit, [c.key]: v })} />
                   ) : (
@@ -160,7 +162,7 @@ export function CrudTable({ table, cols, title, order = "id", defaults = {}, all
               ))}
             </div>
           )}
-          <Button variant="hero" onClick={save}>Save</Button>
+          <Button variant="hero" onClick={save}>{t("Save")}</Button>
         </DialogContent>
       </Dialog>
     </div>

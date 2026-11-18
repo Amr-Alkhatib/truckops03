@@ -40,7 +40,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             <Truck className="size-4" />
           </span>
           <span className={`font-display text-lg font-semibold ${overlay ? "text-ink-foreground" : ""}`}>
-            TruckOps <span className="hidden font-sans text-xs font-normal opacity-60 sm:inline">by Rolling Feast</span>
+            TruckOps <span className="hidden font-sans text-xs font-normal opacity-60 sm:inline">{t("by Rolling Feast")}</span>
           </span>
         </Link>
         <nav className={`hidden flex-1 items-center gap-6 text-sm font-medium md:flex ${overlay ? "text-ink-foreground" : ""}`}>{links}</nav>
@@ -58,7 +58,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             </>
           )}
           {user && (
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)} aria-label={t("Menu")}>
               <Menu />
             </Button>
           )}

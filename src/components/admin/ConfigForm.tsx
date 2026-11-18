@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Field } from "@/components/Field";
+import { translate, useI18n } from "@/lib/i18n";
 
 export interface CfgField {
   path: string; // dot path into config
@@ -31,8 +32,8 @@ export function useConfig() {
 
 export async function saveConfig(cfg: any, qc: ReturnType<typeof useQueryClient>) {
   const { error } = await supabase.from("app_config").update({ config: cfg, updated_at: new Date().toISOString() }).eq("id", 1);
-  if (error) { toast.error(error.message.includes("row") ? "Only admins can change pricing & rules" : error.message); return false; }
-  toast.success("Saved — new quotes use this immediately");
+  if (error) { toast.error(error.message.includes("row") ? translate("Only admins can change pricing & rules") : error.message); return false; }
+  toast.success(translate("Saved — new quotes use this immediately"));
   qc.invalidateQueries({ queryKey: ["admin-config"] });
   qc.invalidateQueries({ queryKey: ["engine-static"] });
   qc.invalidateQueries({ queryKey: ["public-config"] });
@@ -40,6 +41,7 @@ export async function saveConfig(cfg: any, qc: ReturnType<typeof useQueryClient>
 }
 
 export function ConfigForm({ title, fields, children }: { title: string; fields: CfgField[]; children?: (cfg: any, set: (c: any) => void) => React.ReactNode }) {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const replan = useReplan();
   const q = useConfig();
@@ -48,15 +50,15 @@ export function ConfigForm({ title, fields, children }: { title: string; fields:
   if (!cfg) return <Skeleton className="h-48 rounded-3xl" />;
   return (
     <div className="glass rounded-3xl p-4 sm:p-6">
-      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
+      <h2 className="mb-4 text-xl font-semibold">{t(title)}</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         {fields.map((f) => (
           <Field key={f.path} label={f.label}>
             {f.type === "bool" ? (
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!get(cfg, f.path)} onChange={(e) => setCfg(setIn(cfg, f.path, e.target.checked))} /> Enabled</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!get(cfg, f.path)} onChange={(e) => setCfg(setIn(cfg, f.path, e.target.checked))} /> {t("Enabled")}</label>
             ) : f.type === "select" ? (
               <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={get(cfg, f.path)} onChange={(e) => setCfg(setIn(cfg, f.path, e.target.value))}>
-                {f.options!.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {f.options!.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
               </select>
             ) : (
               <Input type={f.type} step="any" value={get(cfg, f.path) ?? ""} onChange={(e) => setCfg(setIn(cfg, f.path, f.type === "number" ? Number(e.target.value) : e.target.value))} />
@@ -65,7 +67,7 @@ export function ConfigForm({ title, fields, children }: { title: string; fields:
         ))}
       </div>
       {children?.(cfg, setCfg)}
-      <Button variant="hero" className="mt-6" onClick={async () => { if (await saveConfig(cfg, qc)) replan(`${title} changed`); }}>Save</Button>
+      <Button variant="hero" className="mt-6" onClick={async () => { if (await saveConfig(cfg, qc)) replan(`${title} changed`); }}>{t("Save")}</Button>
     </div>
   );
 }

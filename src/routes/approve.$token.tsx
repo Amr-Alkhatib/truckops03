@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateDE, type Quote } from "@/lib/engine";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/approve/$token")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/approve/$token")({
 });
 
 function Approve() {
+  const { t } = useI18n();
   const { token } = Route.useParams();
   const qc = useQueryClient();
   const [reason, setReason] = useState("");
@@ -44,8 +46,8 @@ function Approve() {
     setBusy(true);
     const res = await respondFn({ data: { token, accept, reason } }).catch((e) => ({ ok: false as const, error: String(e?.message ?? e) }));
     setBusy(false);
-    if (!res.ok) return toast.error(res.error);
-    toast.success(accept ? "Quote accepted — thank you!" : "Quote rejected");
+    if (!res.ok) return toast.error(t(res.error));
+    toast.success(t(accept ? "Quote accepted — thank you!" : "Quote rejected"));
     qc.invalidateQueries({ queryKey: ["approve", token] });
   };
 
@@ -54,28 +56,28 @@ function Approve() {
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10">
         {q.isLoading ? <Skeleton className="h-96 rounded-3xl" /> : !q.data ? (
-          <div className="glass rounded-3xl p-10 text-center">This approval link is invalid or has expired.</div>
+          <div className="glass rounded-3xl p-10 text-center">{t("This approval link is invalid or has expired.")}</div>
         ) : (
           <div className="glass space-y-6 rounded-3xl p-6 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm text-muted-foreground">Quote {q.data.ref} for {q.data.company_name} · PO {q.data.po_number}</p>
-                <h1 className="text-3xl font-semibold">Hi {q.data.approver_name}, please approve</h1>
-                <p className="text-muted-foreground">{q.data.contact_name} requested food-truck catering for {q.data.guests} guests on {formatDateDE(q.data.event_date)}, {q.data.start_time.slice(0, 5)}–{q.data.end_time.slice(0, 5)} at {q.data.venue_name}.</p>
+                <p className="text-sm text-muted-foreground">{t("Quote {ref} for {company} · PO {po}", { ref: q.data.ref, company: q.data.company_name, po: q.data.po_number })}</p>
+                <h1 className="text-3xl font-semibold">{t("Hi {name}, please approve", { name: q.data.approver_name })}</h1>
+                <p className="text-muted-foreground">{t("{contact} requested food-truck catering for {guests} guests on {date}, {start}–{end} at {venue}.", { contact: q.data.contact_name, guests: q.data.guests, date: formatDateDE(q.data.event_date), start: q.data.start_time.slice(0, 5), end: q.data.end_time.slice(0, 5), venue: q.data.venue_name })}</p>
               </div>
               <StatusBadge status={q.data.status} />
             </div>
             <QuoteSummary quote={q.data.quote as Quote} compact />
             {q.data.status === "awaiting_approval" ? (
               <div className="space-y-3">
-                <Textarea placeholder="Optional comment or reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
+                <Textarea placeholder={t("Optional comment or reason")} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
                 <div className="flex gap-2">
-                  <Button variant="hero" disabled={busy} onClick={() => respond(true)}><Check /> Accept quote</Button>
-                  <Button variant="outline" disabled={busy} onClick={() => respond(false)}><X /> Reject</Button>
+                  <Button variant="hero" disabled={busy} onClick={() => respond(true)}><Check /> {t("Accept quote")}</Button>
+                  <Button variant="outline" disabled={busy} onClick={() => respond(false)}><X /> {t("Reject")}</Button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">This quote has been answered. {q.data.client_response_reason && `Comment: “${q.data.client_response_reason}”`}</p>
+              <p className="text-sm text-muted-foreground">{t("This quote has been answered.")} {q.data.client_response_reason && `${t("Comment")}: “${q.data.client_response_reason}”`}</p>
             )}
           </div>
         )}

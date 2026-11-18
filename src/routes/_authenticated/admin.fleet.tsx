@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudTable } from "@/components/admin/CrudTable";
+import { T } from "@/components/T";
+import { translate } from "@/lib/i18n";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export const Route = createFileRoute("/_authenticated/admin/fleet")({
   component: () => (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Fleet</h1>
+      <h1 className="text-3xl font-semibold"><T>Fleet</T></h1>
       <CrudTable
         table="trucks" title="Trucks" order="name" allowDelete={false}
         defaults={{ max_guests: 100, height_m: 3, footprint_m2: 18, status: "active", vegan: false, gluten_free: false, halal: false, needs_400v: false, is_addon: false }}
@@ -33,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin/fleet")({
           { key: "truck_id", label: "Truck", type: "truck" },
           { key: "start_date", label: "From", type: "date" },
           { key: "end_date", label: "To", type: "date" },
-          { key: "recurring_month", label: "Every year in", type: "select", nullable: true, options: MONTHS.map((m, i) => ({ value: String(i + 1), label: m })), render: (r) => (r.recurring_month ? `Every ${MONTHS[r.recurring_month - 1]}` : "—") },
+          { key: "recurring_month", label: "Every year in", type: "select", nullable: true, options: MONTHS.map((m, i) => ({ value: String(i + 1), label: m })), render: (r) => (r.recurring_month ? translate("Every {month}", undefined, { month: translate(MONTHS[r.recurring_month - 1]) }) : "—") },
           { key: "reason", label: "Reason", type: "text" },
         ]}
       />

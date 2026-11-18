@@ -6,6 +6,7 @@ import { AuthCard } from "@/components/AuthCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/forgot-password")({
 });
 
 function Forgot() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -35,20 +37,20 @@ function Forgot() {
   };
   if (sent)
     return (
-      <AuthCard title="Check your inbox" subtitle={`If an account exists for ${email}, we sent a link to reset your password.`}>
-        <Button asChild variant="hero" className="w-full"><Link to="/login">Back to sign in</Link></Button>
+      <AuthCard title={t("Check your inbox")} subtitle={t("If an account exists for {email}, we sent a link to reset your password.", { email })}>
+        <Button asChild variant="hero" className="w-full"><Link to="/login">{t("Back to sign in")}</Link></Button>
       </AuthCard>
     );
   return (
-    <AuthCard title="Forgot your password?" subtitle="We'll email you a link to choose a new one.">
+    <AuthCard title={t("Forgot your password?")} subtitle={t("We'll email you a link to choose a new one.")}>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("Email")}</Label>
           <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? "Sending…" : "Send reset link"}</Button>
+        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? t("Sending…") : t("Send reset link")}</Button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted-foreground"><Link to="/login" className="text-primary hover:underline">Back to sign in</Link></p>
+      <p className="mt-6 text-center text-sm text-muted-foreground"><Link to="/login" className="text-primary hover:underline">{t("Back to sign in")}</Link></p>
     </AuthCard>
   );
 }

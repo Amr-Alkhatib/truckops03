@@ -4,10 +4,11 @@ interface Props {
   depot: { lat: number; lon: number };
   dest: { lat: number; lon: number } | null;
   geometry?: [number, number][];
+  labels?: { depot: string; venue: string };
 }
 
 /** Leaflet map — imported dynamically so it never runs during SSR. */
-export function RouteMap({ depot, dest, geometry }: Props) {
+export function RouteMap({ depot, dest, geometry, labels }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
 
@@ -22,10 +23,13 @@ export function RouteMap({ depot, dest, geometry }: Props) {
       }
       const map = mapRef.current;
       map.eachLayer((l: any) => { if (!l._url) map.removeLayer(l); });
-      const dot = (color: string) => L.divIcon({ className: "", html: `<div style="width:14px;height:14px;border-radius:9999px;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>` });
-      L.marker([depot.lat, depot.lon], { icon: dot("var(--ink)") }).addTo(map).bindTooltip("Depot");
+      // iconSize matches the drawn dot (border-box), so the dot's centre sits exactly on the coordinate.
+      const dot = (color: string, size: number) =>
+        L.divIcon({ className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2], html: `<div style="box-sizing:border-box;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>` });
+      L.marker([depot.lat, depot.lon], { icon: dot("var(--ink)", 14) }).addTo(map).bindTooltip(labels?.depot ?? "Depot");
       if (dest) {
-        L.marker([dest.lat, dest.lon], { icon: dot("var(--primary)") }).addTo(map).bindTooltip("Venue");
+        // The venue sits on top, slightly larger, so it stays visible when it is next to the yard.
+        L.marker([dest.lat, dest.lon], { icon: dot("var(--primary)", 18), zIndexOffset: 1000 }).addTo(map).bindTooltip(labels?.venue ?? "Venue");
         if (geometry?.length) {
           const line = L.polyline(geometry, { color: getComputedStyle(document.documentElement).getPropertyValue("--primary") || "orange", weight: 4 }).addTo(map);
           map.fitBounds(line.getBounds(), { padding: [20, 20] });
@@ -33,7 +37,7 @@ export function RouteMap({ depot, dest, geometry }: Props) {
       } else map.setView([depot.lat, depot.lon], 11);
     })();
     return () => { cancelled = true; };
-  }, [depot.lat, depot.lon, dest?.lat, dest?.lon, geometry]);
+  }, [depot.lat, depot.lon, dest?.lat, dest?.lon, geometry, labels?.depot, labels?.venue]);
 
   useEffect(() => () => { mapRef.current?.remove(); mapRef.current = null; }, []);
 

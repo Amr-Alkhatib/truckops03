@@ -4,12 +4,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({ component: Users });
 
 const ROLES = ["admin", "staff", "planner"] as const;
 
 function Users() {
+  const { t } = useI18n();
   const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
   const q = useQuery({
@@ -20,20 +22,20 @@ function Users() {
     },
   });
   const toggle = async (uid: string, role: (typeof ROLES)[number], has: boolean) => {
-    if (uid === user?.id && role === "admin" && has) return toast.error("You can't remove your own admin role");
+    if (uid === user?.id && role === "admin" && has) return toast.error(t("You can't remove your own admin role"));
     const { error } = has ? await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role) : await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) return toast.error(error.message);
-    toast.success("Roles updated");
+    toast.success(t("Roles updated"));
     qc.invalidateQueries({ queryKey: ["admin-users"] });
   };
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-semibold">Users</h1>
-      {!isAdmin && <p className="text-sm text-muted-foreground">Only admins can change roles.</p>}
+      <h1 className="text-3xl font-semibold">{t("Users")}</h1>
+      {!isAdmin && <p className="text-sm text-muted-foreground">{t("Only admins can change roles.")}</p>}
       <div className="glass overflow-x-auto rounded-2xl p-2">
         {q.isLoading ? <Skeleton className="h-40" /> : (
           <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs uppercase text-muted-foreground"><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Company</th><th className="p-2">Roles</th></tr></thead>
+            <thead><tr className="border-b text-left text-xs uppercase text-muted-foreground"><th className="p-2">{t("Name")}</th><th className="p-2">{t("Email")}</th><th className="p-2">{t("Company")}</th><th className="p-2">{t("Roles")}</th></tr></thead>
             <tbody>
               {q.data!.map((u) => (
                 <tr key={u.id} className="border-b last:border-0">
@@ -41,7 +43,7 @@ function Users() {
                   <td className="flex gap-1.5 p-2">
                     {ROLES.map((r) => {
                       const has = u.roles.includes(r);
-                      return <button key={r} disabled={!isAdmin} onClick={() => toggle(u.id, r, has)} className={`rounded-full border px-2.5 py-0.5 text-xs ${has ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>{r}</button>;
+                      return <button key={r} disabled={!isAdmin} onClick={() => toggle(u.id, r, has)} className={`rounded-full border px-2.5 py-0.5 text-xs ${has ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>{t(r)}</button>;
                     })}
                   </td>
                 </tr>

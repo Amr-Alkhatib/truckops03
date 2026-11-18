@@ -59,23 +59,23 @@ function Signup() {
   if (sent) return <CheckInbox email={form.email} />;
 
   return (
-    <AuthCard title="Create your planner account" subtitle="Book trucks, save your venues, track approvals.">
+    <AuthCard title={t("Create your planner account")} subtitle={t("Book trucks, save your venues, track approvals.")}>
       <form onSubmit={submit} className="space-y-4">
         {(["full_name", "email", "password"] as const).map((k) => (
           <div key={k} className="space-y-1.5">
-            <Label htmlFor={k}>{k === "full_name" ? "Full name" : k === "email" ? "Work email" : "Password"}</Label>
+            <Label htmlFor={k}>{t(k === "full_name" ? "Full name" : k === "email" ? "Work email" : "Password")}</Label>
             <Input id={k} type={k === "password" ? "password" : k === "email" ? "email" : "text"} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
-            {errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>}
+            {errors[k] && <p className="text-xs text-destructive">{t(errors[k])}</p>}
           </div>
         ))}
         <p className="text-xs text-muted-foreground">
           {t("We store your name and email to run your planner account.")}{" "}
           <Link to="/privacy" className="text-primary hover:underline">{t("See the privacy policy.")}</Link>
         </p>
-        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
+        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? t("Creating…") : t("Create account")}</Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Already registered? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+        {t("Already registered?")} <Link to="/login" className="text-primary hover:underline">{t("Sign in")}</Link>
       </p>
     </AuthCard>
   );

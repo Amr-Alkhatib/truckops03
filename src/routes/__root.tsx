@@ -1,4 +1,4 @@
-import { useRestoreLang } from "@/lib/i18n";
+import { useI18n, useRestoreLang } from "@/lib/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -16,21 +16,39 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, Home, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
+  const { t } = useI18n();
+  const reduceMotion = useReducedMotion();
+  useRestoreLang();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist or has been moved.</p>
-        <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            Go home
-          </Link>
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="mx-auto flex max-w-2xl flex-col items-center px-4 pb-24 pt-16 text-center sm:pt-24">
+        <p className="font-display text-[7rem] font-semibold leading-none tracking-tight text-gradient sm:text-[10rem]" aria-hidden="true">404</p>
+        {/* A truck rolling along a dashed road; it stays still for reduced motion. */}
+        <div className="relative mt-4 h-14 w-full max-w-md overflow-hidden" aria-hidden="true">
+          <div className="absolute inset-x-0 bottom-3 h-0.5 bg-[repeating-linear-gradient(90deg,var(--color-border)_0_18px,transparent_18px_30px)]" />
+          <motion.span
+            className="absolute bottom-4 grid size-10 place-items-center rounded-full bg-gradient-primary text-primary-foreground shadow-elegant"
+            initial={{ left: "-12%" }}
+            animate={reduceMotion ? { left: "45%" } : { left: ["-12%", "45%", "45%", "112%"] }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 5, times: [0, 0.35, 0.65, 1], repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Truck className="size-5" />
+          </motion.span>
         </div>
-      </div>
+        <h1 className="mt-6 text-3xl font-semibold sm:text-4xl">{t("This truck took a wrong turn")}</h1>
+        <p className="mt-3 max-w-md text-muted-foreground">{t("The page you're looking for doesn't exist or has moved. Let's get you back on the road.")}</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link to="/" className="inline-flex h-11 items-center gap-2 rounded-full border bg-background px-5 text-sm font-medium hover:bg-accent"><Home className="size-4" /> {t("Back to the start page")}</Link>
+          <Link to="/book" className="inline-flex h-11 items-center gap-2 rounded-full bg-gradient-primary px-5 text-sm font-semibold text-primary-foreground shadow-elegant">{t("Get an instant quote")} <ArrowRight className="size-4" /></Link>
+        </div>
+      </main>
     </div>
   );
 }
@@ -38,6 +56,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const { t } = useI18n();
   useRestoreLang();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
@@ -45,13 +64,13 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("This page didn't load")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("Something went wrong on our end. You can try refreshing or head back home.")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            Try again
+            {t("Try again")}
           </button>
-          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent">Go home</a>
+          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent">{t("Go home")}</a>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { BadgeEuro, CalendarDays, ClipboardList, FileCheck2, LayoutDashboard, Map, NotebookText, Package, History, Warehouse, Scale, Truck, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -30,13 +31,14 @@ const NAV = [
 ] as const;
 
 function AdminLayout() {
+  const { t } = useI18n();
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row">
       <aside className="lg:sticky lg:top-24 lg:w-56 lg:self-start">
         <nav className="glass flex gap-1 overflow-x-auto rounded-2xl p-2 lg:flex-col">
           {NAV.map((n) => (
             <Link key={n.to} to={n.to} activeOptions={{ exact: "exact" in n }} className="flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" activeProps={{ className: "bg-gradient-primary !text-primary-foreground" }}>
-              <n.icon className="size-4" />{n.label}
+              <n.icon className="size-4" />{t(n.label)}
             </Link>
           ))}
         </nav>

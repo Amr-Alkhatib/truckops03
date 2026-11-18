@@ -6,6 +6,7 @@ import { AuthCard } from "@/components/AuthCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function Reset() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [ready, setReady] = useState<boolean | null>(null);
   const [pw, setPw] = useState("");
@@ -51,28 +53,28 @@ function Reset() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw.length < 8) return toast.error("Use at least 8 characters");
-    if (pw !== pw2) return toast.error("The passwords don't match");
+    if (pw.length < 8) return toast.error(t("Use at least 8 characters"));
+    if (pw !== pw2) return toast.error(t("The passwords don't match"));
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Password updated");
+    toast.success(t("Password updated"));
     navigate({ to: "/profile" });
   };
 
   if (ready === false)
     return (
-      <AuthCard title="Link expired or invalid" subtitle="This reset link can't be used any more. Request a new one.">
-        <Button asChild variant="hero" className="w-full"><Link to="/forgot-password">Send a new reset link</Link></Button>
+      <AuthCard title={t("Link expired or invalid")} subtitle={t("This reset link can't be used any more. Request a new one.")}>
+        <Button asChild variant="hero" className="w-full"><Link to="/forgot-password">{t("Send a new reset link")}</Link></Button>
       </AuthCard>
     );
   return (
-    <AuthCard title="Choose a new password" subtitle="At least 8 characters.">
+    <AuthCard title={t("Choose a new password")} subtitle={t("At least 8 characters.")}>
       <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5"><Label htmlFor="pw">New password</Label><Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} disabled={!ready} /></div>
-        <div className="space-y-1.5"><Label htmlFor="pw2">Repeat password</Label><Input id="pw2" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} disabled={!ready} /></div>
-        <Button type="submit" variant="hero" className="w-full" disabled={busy || !ready}>{busy ? "Saving…" : "Save new password"}</Button>
+        <div className="space-y-1.5"><Label htmlFor="pw">{t("New password")}</Label><Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} disabled={!ready} /></div>
+        <div className="space-y-1.5"><Label htmlFor="pw2">{t("Repeat password")}</Label><Input id="pw2" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} disabled={!ready} /></div>
+        <Button type="submit" variant="hero" className="w-full" disabled={busy || !ready}>{busy ? t("Saving…") : t("Save new password")}</Button>
       </form>
     </AuthCard>
   );

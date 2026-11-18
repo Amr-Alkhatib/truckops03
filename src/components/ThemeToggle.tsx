@@ -1,8 +1,10 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export function ThemeToggle() {
+  const { t } = useI18n();
   const [dark, setDark] = useState(false);
   useEffect(() => {
     const stored = localStorage.getItem("truckops-theme");
@@ -17,7 +19,7 @@ export function ThemeToggle() {
     localStorage.setItem("truckops-theme", d ? "dark" : "light");
   };
   return (
-    <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle dark mode">
+    <Button variant="ghost" size="icon" onClick={toggle} aria-label={t("Toggle dark mode")}>
       {dark ? <Sun /> : <Moon />}
     </Button>
   );

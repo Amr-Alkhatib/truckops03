@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/policy")({
   head: () => ({ meta: [{ title: "Policy notes — TruckOps back office" }, { name: "description", content: "Why TruckOps works the way it does." }] }),
@@ -22,13 +23,14 @@ const NOTES = [
 ];
 
 function Policy() {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Policy notes</h1>
+      <h1 className="text-3xl font-semibold">{t("Policy notes")}</h1>
       {NOTES.map((n) => (
         <section key={n.title} className="glass rounded-3xl p-6">
-          <h2 className="mb-2 text-lg font-semibold">{n.title}</h2>
-          {n.body.map((p) => <p key={p} className="mb-2 text-sm text-muted-foreground last:mb-0">{p}</p>)}
+          <h2 className="mb-2 text-lg font-semibold">{t(n.title)}</h2>
+          {n.body.map((p) => <p key={p} className="mb-2 text-sm text-muted-foreground last:mb-0">{t(p)}</p>)}
         </section>
       ))}
     </div>

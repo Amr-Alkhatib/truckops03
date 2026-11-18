@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CrudTable } from "@/components/admin/CrudTable";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateDE } from "@/lib/engine";
+import { translate, useI18n } from "@/lib/i18n";
 
-const status = (v: string) => <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v === "verified" ? "bg-success/15 text-success" : "bg-warning/25"}`}>{v}</span>;
+const status = (v: string) => <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v === "verified" ? "bg-success/15 text-success" : "bg-warning/25"}`}>{translate(v)}</span>;
 
 export const Route = createFileRoute("/_authenticated/admin/towns")({
   head: () => ({ meta: [{ title: "Towns & permits — TruckOps back office" }, { name: "description", content: "Sourced permit registry per town." }] }),
@@ -12,11 +13,12 @@ export const Route = createFileRoute("/_authenticated/admin/towns")({
 });
 
 function TownsPage() {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Towns & permits</h1>
+      <h1 className="text-3xl font-semibold">{t("Towns & permits")}</h1>
       <p className="text-sm text-muted-foreground">
-        Every value has a source. Unknown values stay empty — never guessed. Public-ground bookings in an unverified town, or with an unknown fee or lead time, still get a quote, but go to <strong>Permit check</strong> until staff records the permit. Unknown towns are added automatically from the address search.
+        {t("Every value has a source. Unknown values stay empty — never guessed. Public-ground bookings in an unverified town, or with an unknown fee or lead time, still get a quote, but go to Permit check until staff records the permit. Unknown towns are added automatically from the address search.")}
       </p>
       <CrudTable
         table="towns" title="Town registry" order="name"
@@ -36,13 +38,13 @@ function TownsPage() {
             { value: "per_started_m2_per_day", label: "Per started m² per day" },
             { value: "per_truck", label: "Per truck" }, { value: "flat", label: "Flat" }, { value: "unknown", label: "Unknown" },
           ] },
-          { key: "fee_value", label: "Fee €", type: "number", nullable: true, render: (r) => r.fee_model === "per_started_3m2_per_day" ? Object.entries(r.fee_table?.groups ?? {}).map(([g, v]) => `${g}: €${v}`).join(" · ") : r.fee_value ?? <span className="text-warning">unknown</span> },
+          { key: "fee_value", label: "Fee €", type: "number", nullable: true, render: (r) => r.fee_model === "per_started_3m2_per_day" ? Object.entries(r.fee_table?.groups ?? {}).map(([g, v]) => `${g}: €${v}`).join(" · ") : r.fee_value ?? <span className="text-warning">{translate("unknown")}</span> },
           { key: "min_fee", label: "Min fee €", type: "number", nullable: true, hideInTable: true },
-          { key: "lead_weeks", label: "Lead weeks", type: "number", nullable: true, render: (r) => r.lead_weeks ?? <span className="text-warning">not published</span> },
+          { key: "lead_weeks", label: "Lead weeks", type: "number", nullable: true, render: (r) => r.lead_weeks ?? <span className="text-warning">{translate("not published")}</span> },
           { key: "max_trucks", label: "Max trucks", type: "number", hideInTable: true },
           { key: "generators_allowed", label: "Generators OK", type: "bool" },
           { key: "night_warn_from", label: "Night warning from", type: "time", hideInTable: true },
-          { key: "source_url", label: "Source", type: "text", render: (r) => r.source_url ? <a className="text-primary underline" href={r.source_url} target="_blank" rel="noreferrer">{r.source_title || "link"}</a> : <span className="text-warning">none</span> },
+          { key: "source_url", label: "Source", type: "text", render: (r) => r.source_url ? <a className="text-primary underline" href={r.source_url} target="_blank" rel="noreferrer">{r.source_title || translate("link")}</a> : <span className="text-warning">{translate("none")}</span> },
           { key: "source_title", label: "Source title", type: "text", hideInTable: true },
           { key: "verified_on", label: "Checked on", type: "date", render: (r) => r.verified_on ? formatDateDE(r.verified_on) : "—" },
           { key: "notes", label: "Notes", type: "text", hideInTable: true },
@@ -54,6 +56,7 @@ function TownsPage() {
 }
 
 function Checklists() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["town-checklists"],
@@ -67,9 +70,9 @@ function Checklists() {
   };
   return (
     <div className="glass rounded-3xl p-4 sm:p-6">
-      <h2 className="mb-1 text-xl font-semibold">New-town checklists</h2>
-      <p className="mb-4 text-sm text-muted-foreground">Generated automatically the first time a town is used in a booking.</p>
-      {!byTown.size && <p className="text-sm text-muted-foreground">No checklists yet.</p>}
+      <h2 className="mb-1 text-xl font-semibold">{t("New-town checklists")}</h2>
+      <p className="mb-4 text-sm text-muted-foreground">{t("Generated automatically the first time a town is used in a booking.")}</p>
+      {!byTown.size && <p className="text-sm text-muted-foreground">{t("No checklists yet.")}</p>}
       {[...byTown.entries()].map(([town, items]) => (
         <div key={town} className="mb-4">
           <h3 className="mb-2 font-semibold">{town}</h3>
@@ -77,7 +80,7 @@ function Checklists() {
             {items.map((i) => (
               <li key={i.id} className="flex gap-2">
                 <input type="checkbox" checked={i.done} onChange={(e) => toggle(i.id, e.target.checked)} className="mt-1" />
-                <span className={i.done ? "line-through opacity-60" : ""}>{i.item} <span className="text-muted-foreground">— {i.legal_basis}</span>{i.source_url && <> · <a className="text-primary underline" href={i.source_url} target="_blank" rel="noreferrer">source</a></>}</span>
+                <span className={i.done ? "line-through opacity-60" : ""}>{t(i.item)} <span className="text-muted-foreground">— {i.legal_basis}</span>{i.source_url && <> · <a className="text-primary underline" href={i.source_url} target="_blank" rel="noreferrer">{t("source")}</a></>}</span>
               </li>
             ))}
           </ul>

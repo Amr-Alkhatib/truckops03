@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { eur, formatDateDE } from "@/lib/engine";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/p/$token")({
   ssr: false,
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/p/$token")({
 });
 
 function TokenBooking() {
+  const { t } = useI18n();
   const { token } = Route.useParams();
   const q = useQuery({
     queryKey: ["planner-link", token],
@@ -39,9 +41,9 @@ function TokenBooking() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto max-w-lg px-4 py-20 text-center">
-          <h1 className="text-3xl font-semibold">This booking link doesn't work</h1>
-          <p className="mt-2 text-muted-foreground">It may have been turned off or expired. Ask the person who sent it for a new one, or create an account.</p>
-          <Button asChild variant="hero" className="mt-6"><Link to="/signup">Create an account</Link></Button>
+          <h1 className="text-3xl font-semibold">{t("This booking link doesn't work")}</h1>
+          <p className="mt-2 text-muted-foreground">{t("It may have been turned off or expired. Ask the person who sent it for a new one, or create an account.")}</p>
+          <Button asChild variant="hero" className="mt-6"><Link to="/signup">{t("Create an account")}</Link></Button>
         </main>
       </div>
     );
@@ -52,11 +54,11 @@ function TokenBooking() {
       <BookingWizard link={link} />
       {q.data.bookings.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
-          <h2 className="mb-3 text-xl font-semibold">Bookings made with this link</h2>
+          <h2 className="mb-3 text-xl font-semibold">{t("Bookings made with this link")}</h2>
           <div className="glass rounded-3xl p-4 text-sm">
             {q.data.bookings.map((b) => (
               <div key={b.ref} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
-                <span><strong>{b.ref}</strong> · {formatDateDE(b.event_date)} · {b.venue_name} · {b.guests} guests</span>
+                <span><strong>{b.ref}</strong> · {formatDateDE(b.event_date)} · {b.venue_name} · {t("{n} guests", { n: b.guests })}</span>
                 <span className="flex items-center gap-3"><StatusBadge status={b.status} /> {eur(Number(b.total_gross))}</span>
               </div>
             ))}

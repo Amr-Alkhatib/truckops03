@@ -7,6 +7,7 @@ import { AuthCard } from "@/components/AuthCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/lib/i18n";
 import { CheckInbox } from "@/components/CheckInbox";
 
 export const Route = createFileRoute("/login")({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
+  const { t } = useI18n();
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -40,33 +42,33 @@ function Login() {
     setBusy(false);
     if (error) {
       if (/not confirmed/i.test(error.message)) {
-        toast.error("Please confirm your email first — we can send the link again.");
+        toast.error(t("Please confirm your email first — we can send the link again."));
         setUnconfirmed(true);
         return;
       }
-      return toast.error(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
+      return toast.error(error.message === "Invalid login credentials" ? t("Wrong email or password.") : error.message);
     }
-    toast.success("Welcome back");
+    toast.success(t("Welcome back"));
     const safe = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/bookings";
     navigate({ to: safe as "/bookings" });
   };
 
   return (
-    <AuthCard title="Welcome back" subtitle="Sign in to plan your next event.">
+    <AuthCard title={t("Welcome back")} subtitle={t("Sign in to plan your next event.")}>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("Email")}</Label>
           <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("Password")}</Label>
           <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
-        <p className="text-right text-sm"><Link to="/forgot-password" className="text-primary hover:underline">Forgot password?</Link></p>
+        <Button type="submit" variant="hero" className="w-full" disabled={busy}>{busy ? t("Signing in…") : t("Sign in")}</Button>
+        <p className="text-right text-sm"><Link to="/forgot-password" className="text-primary hover:underline">{t("Forgot password?")}</Link></p>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New here? <Link to="/signup" className="text-primary hover:underline">Create an account</Link>
+        {t("New here?")} <Link to="/signup" className="text-primary hover:underline">{t("Create an account")}</Link>
       </p>
     </AuthCard>
   );
