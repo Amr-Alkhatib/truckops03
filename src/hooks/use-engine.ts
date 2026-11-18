@@ -1,14 +1,28 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { loadDateData, loadStatic } from "@/lib/data";
+import { useServerFn } from "@tanstack/react-start";
+import type { DateData, StaticData } from "@/lib/data";
+import { getEngineDate, getEngineDateByToken, getEngineStatic, getEngineStaticByToken } from "@/lib/public-data.functions";
 import { roadDistance } from "@/lib/geo";
 import type { Yard } from "@/lib/engine";
 
-export const useStaticData = () =>
-  useQuery({ queryKey: ["engine-static"], queryFn: () => loadStatic(supabase), staleTime: 30_000 });
+/** Engine reference data via the server (signed-in user, or a planner-link token). */
+export function useStaticData(token?: string) {
+  const a = useServerFn(getEngineStatic), t = useServerFn(getEngineStaticByToken);
+  return useQuery({
+    queryKey: ["engine-static", token ?? null],
+    queryFn: async () => (token ? await t({ data: { token } }) : await a()) as StaticData,
+    staleTime: 30_000,
+  });
+}
 
-export const useDateData = (date: string | null) =>
-  useQuery({ queryKey: ["engine-date", date], queryFn: () => loadDateData(supabase, date!), enabled: !!date });
+export function useDateData(date: string | null, token?: string) {
+  const a = useServerFn(getEngineDate), t = useServerFn(getEngineDateByToken);
+  return useQuery({
+    queryKey: ["engine-date", date, token ?? null],
+    queryFn: async () => (token ? await t({ data: { token, date: date! } }) : await a({ data: { date: date! } })) as DateData,
+    enabled: !!date,
+  });
+}
 
 export const useRoute = (depot: { lat: number; lon: number } | undefined, dest: { lat: number; lon: number } | null) =>
   useQuery({

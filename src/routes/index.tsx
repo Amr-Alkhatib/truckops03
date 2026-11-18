@@ -1,14 +1,12 @@
 import { useI18n } from "@/lib/i18n";
-import { usePackages } from "@/hooks/use-packages";
+import { usePublicHome } from "@/hooks/use-packages";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, FileCheck2, MapPin, ShieldCheck, Sparkles, Users } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { eur, type EngineConfig } from "@/lib/engine";
 
 export const Route = createFileRoute("/")({
@@ -27,16 +25,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { t } = useI18n();
-  const pk = usePackages();
+  const home = usePublicHome();
+  const pk = { data: home.data?.packages };
   const best = pk.data?.find((p) => p.bestseller) ?? pk.data?.[0];
-  const { data: cfg, isLoading } = useQuery({
-    queryKey: ["public-config"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("app_config").select("config").eq("id", 1).single();
-      if (error) throw error;
-      return data.config as unknown as EngineConfig;
-    },
-  });
+  const cfg = home.data?.config as EngineConfig | undefined;
+  const isLoading = home.isLoading;
 
   return (
     <div className="min-h-screen">

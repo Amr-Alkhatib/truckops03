@@ -117,9 +117,9 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
   const submit = (a: { data: any }) => (link ? submitToken({ data: { token: link.token, booking: a.data } }) : submitAuth(a));
   const [serverQuote, setServerQuote] = useState<{ q: ReturnType<typeof buildQuote>; key: string } | null>(null);
 
-  const staticQ = useStaticData();
+  const staticQ = useStaticData(link?.token);
   const cfg = staticQ.data?.config;
-  const dateQ = useDateData(f.event_date || null);
+  const dateQ = useDateData(f.event_date || null, link?.token);
   const dest = f.lat != null && f.lon != null ? { lat: f.lat, lon: f.lon } : null;
   const yr = useYardRoutes(staticQ.data?.yards, dest);
   const routeQ = { data: yr.done && yr.nearest ? { km: yr.nearest.km, geometry: yr.nearest.geometry, method: yr.nearest.method } : undefined, isFetching: yr.loading, isLoading: yr.loading, isError: yr.error };

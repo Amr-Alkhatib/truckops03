@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getPublicHome } from "@/lib/public-data.functions";
+
+/** Active packages + public price settings (served by the server). */
+export function usePublicHome() {
+  const fn = useServerFn(getPublicHome);
+  return useQuery({ queryKey: ["public-home"], queryFn: () => fn(), staleTime: 60_000 });
+}
 
 export function usePackages() {
-  return useQuery({
-    queryKey: ["packages"],
-    queryFn: async () => (await supabase.from("packages").select("*").eq("active", true).order("sort")).data ?? [],
-  });
+  const q = usePublicHome();
+  return { ...q, data: q.data?.packages };
 }
