@@ -110,7 +110,9 @@ async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, act
         permit_status: permitStatus, permit_reasons: quote.permitReasons, permit_number: null, permit_fee: null, permit_issued_on: null, permit_file_path: null,
         street_group: null, route_clearance_status: routeStatus, route_clearance_note: routeNote, conflict_reason: null,
       };
-      const changes = P.reshuffleChanges(ctx, quote.reshuffles, `to make room for ${ref}`);
+      // Only the server solver may move other bookings, and only unlocked bookings on this same date.
+      const movable = new Set((ctx.bookings ?? []).filter((b: any) => b.event_date === data.event_date && !b.locked).map((b) => b.id));
+      const changes = P.reshuffleChanges(ctx, (quote.reshuffles ?? []).filter((m: any) => movable.has(m.bookingId)), `to make room for ${ref}`);
       if (status === "permit_check")
         changes.push({ id, notify: `${ref} needs a permit check: ${[...quote.permitReasons, routeNote].filter(Boolean).join(" ")}`, kind: "permit_check" } as any);
       const { error } = await admin.rpc("commit_day_plan", { _date: data.event_date, _snapshot: snap, _new: row as any, _changes: changes as any, _actor: actor });
@@ -124,7 +126,7 @@ async function doSubmit(data: z.infer<typeof bookingSchema>, userId: string, act
   }
 }
 
-/** Re-run the solver for the given dates (or every future date). Any signed-in user may trigger a re-plan; it only applies engine rules. */
+/** Re-run the solver. Staff may re-plan any dates; other users only dates on which they own a booking. */
 export const recalcDates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(400).optional(), reason: z.string().max(200).default("re-plan") }).parse(d))
@@ -132,7 +134,15 @@ export const recalcDates = createServerFn({ method: "POST" })
     const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
     const P = await import("./planner.server");
     const today = todayISO();
-    const dates = (data.dates ?? (await P.futureBookingDates(admin, today))).filter((d) => d >= today);
+    const { data: staff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
+    let dates: string[];
+    if (staff) dates = (data.dates ?? (await P.futureBookingDates(admin, today))).filter((d) => d >= today);
+    else {
+      if (!data.dates?.length) throw new Error("Not allowed");
+      const { data: own } = await context.supabase.from("bookings").select("event_date").eq("user_id", context.userId).in("event_date", data.dates);
+      const ownDates = new Set((own ?? []).map((r) => r.event_date));
+      dates = data.dates.filter((d) => d >= today && ownDates.has(d));
+    }
     const actor = (context.claims as any)?.email ?? "engine";
     const results = [];
     for (const d of [...new Set(dates)]) results.push(await P.recalcDate(admin, d, actor, data.reason));

@@ -106,6 +106,13 @@
       "when": 1792078482082,
       "tag": "0014_vegan_implies_vegetarian",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794963479863,
+      "tag": "0015_restrict_occupancy_onboarding_rpcs",
+      "breakpoints": true
     }
   ]
 }
