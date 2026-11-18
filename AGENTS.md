@@ -18,6 +18,6 @@
 - System rules (`pair_rules.is_system`) are immutable via DB trigger; legal/fee seed data carries source_url/verified_on/status and unknowns stay NULL so the engine routes them to "Permit check" instead of guessing.
 - The booking wizard lives in `src/components/BookingWizard.tsx` and serves both `/book` (account) and `/p/$token` (planner link, booking owned by the link creator); the review step always shows the server quote (`previewQuote*`), the browser engine only drives live feedback.
 - Every admin table has a `log_admin_change` trigger writing `admin_change_log`; add the trigger to any new admin-editable table.
-- UI text is translated via `src/lib/i18n.ts` keyed by English text; untranslated strings fall back to English.
+- UI text is translated via `src/lib/i18n.ts` keyed by English text (`t("…", { vars })`); German lives in `src/lib/i18n-de.ts`, and messages built by the quote engine are matched by `src/lib/i18n-dynamic.ts`. `Field`, `StatusBadge`, `QuoteSummary` and `CrudTable` translate their own labels. Untranslated strings fall back to English.
 - Distances are per truck from its own yard (`yardOf` + `input.yard_km`); never reintroduce a single depot. Server distances go through `yardDistances` (route_cache); legacy contexts without yards fall back to `distance_km`.
 - Reference tables (fleet, yards, crews, rules, packages, config, VAT, towns) are staff-readable only; planners/visitors get them via `src/lib/public-data.functions.ts` (auth or valid planner-link token) — keeps RLS free of USING(true).

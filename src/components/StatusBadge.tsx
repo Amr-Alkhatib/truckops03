@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 const MAP: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
@@ -14,6 +15,7 @@ const MAP: Record<string, { label: string; cls: string }> = {
 export const STATUS_LABELS = Object.fromEntries(Object.entries(MAP).map(([k, v]) => [k, v.label]));
 
 export function StatusBadge({ status }: { status: string }) {
+  const { t } = useI18n();
   const s = MAP[status] ?? { label: status, cls: "bg-muted" };
-  return <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", s.cls)}>{s.label}</span>;
+  return <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", s.cls)}>{t(s.label)}</span>;
 }

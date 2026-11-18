@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge, STATUS_LABELS } from "@/components/StatusBadge";
 import { eur, formatDateDE } from "@/lib/engine";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/bookings/")({ component: AdminBookings });
 
 function AdminBookings() {
+  const { t } = useI18n();
   const [status, setStatus] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -27,21 +29,21 @@ function AdminBookings() {
   });
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-semibold">Bookings</h1>
+      <h1 className="text-3xl font-semibold">{t("Bookings")}</h1>
       <div className="glass grid gap-3 rounded-2xl p-4 sm:grid-cols-4">
         <select className="h-9 rounded-md border bg-background px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <option value="">{t("All statuses")}</option>
+          {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
         </select>
-        <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" />
-        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
-        <Input placeholder="Town" value={town} onChange={(e) => setTown(e.target.value)} />
+        <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t("From")} />
+        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t("To")} />
+        <Input placeholder={t("Town")} value={town} onChange={(e) => setTown(e.target.value)} />
       </div>
       <div className="glass overflow-x-auto rounded-2xl p-2">
         {q.isLoading ? <Skeleton className="h-60" /> : (
           <table className="w-full text-sm">
             <thead><tr className="border-b text-left text-xs uppercase text-muted-foreground">
-              {["Ref", "Date", "Venue", "Town", "Company", "Guests", "Gross", "Status"].map((h) => <th key={h} className="p-2 font-medium">{h}</th>)}
+              {["Ref", "Date", "Venue", "Town", "Company", "Guests", "Gross", "Status"].map((h) => <th key={h} className="p-2 font-medium">{t(h)}</th>)}
             </tr></thead>
             <tbody>
               {q.data!.map((b) => (
@@ -53,7 +55,7 @@ function AdminBookings() {
                   <td className="p-2"><StatusBadge status={b.status} /></td>
                 </tr>
               ))}
-              {!q.data!.length && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">No bookings match.</td></tr>}
+              {!q.data!.length && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">{t("No bookings match.")}</td></tr>}
             </tbody>
           </table>
         )}

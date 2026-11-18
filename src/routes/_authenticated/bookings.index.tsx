@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { eur, formatDateDE } from "@/lib/engine";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   head: () => ({ meta: [{ title: "My bookings — TruckOps" }, { name: "description", content: "Your Rolling Feast bookings and their status." }] }),
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/bookings/")({
 });
 
 function MyBookings() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const q = useQuery({
     queryKey: ["my-bookings", user?.id],
@@ -24,13 +26,13 @@ function MyBookings() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-semibold">My bookings</h1>
-        <Button variant="hero" asChild><Link to="/book"><Plus /> New booking</Link></Button>
+        <h1 className="text-3xl font-semibold">{t("My bookings")}</h1>
+        <Button variant="hero" asChild><Link to="/book"><Plus /> {t("New booking")}</Link></Button>
       </div>
       {q.isLoading ? (
         <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
       ) : q.data?.length === 0 ? (
-        <div className="glass rounded-3xl p-10 text-center text-muted-foreground">No bookings yet. Your first quote takes about two minutes.</div>
+        <div className="glass rounded-3xl p-10 text-center text-muted-foreground">{t("No bookings yet. Your first quote takes about two minutes.")}</div>
       ) : (
         <div className="space-y-3">
           {q.data!.map((b, i) => (
@@ -38,7 +40,7 @@ function MyBookings() {
               <Link to="/bookings/$id" params={{ id: b.id }} className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5 transition-transform hover:-translate-y-0.5">
                 <div>
                   <p className="font-semibold">{b.venue_name}</p>
-                  <p className="text-sm text-muted-foreground">{b.ref} · {formatDateDE(b.event_date)} · {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)} · {b.guests} guests</p>
+                  <p className="text-sm text-muted-foreground">{b.ref} · {formatDateDE(b.event_date)} · {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)} · {t("{n} guests", { n: b.guests })}</p>
                 </div>
                 <div className="flex items-center gap-4"><StatusBadge status={b.status} /><span className="font-display text-lg tabular-nums">{eur(Number(b.total_gross))}</span></div>
               </Link>

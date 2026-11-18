@@ -23,6 +23,9 @@ Every quote used to be done by hand. For each event, staff had to check the town
 - **Explains infeasibility instead of failing.** When no plan fits, the solver names the blocker in plain words and suggests the nearest working dates (±14 days), the maximum number of guests that would fit, or a shorter event.
 - **Back office.** Fleet, two depots (Stuttgart and Heilbronn), pricing, towns and permit fees, crews, compliance documents, approvals, an audit log and users with roles.
 - **German rules encoded as data.** Permit fees per town, TA Lärm after 22:00, §12 GastG, ArbZG rest periods, §43 IfSG, Baden-Württemberg public holidays (fetched live) and the VAT split. Every legal value is stored with its source and check date. Unknown values stay `NULL` and send the booking to *Permit check* instead of inventing a number.
+- **English and German.** Every page, the back office and the quote engine's messages switch with the DE/EN toggle; the choice is remembered.
+- **Saved places.** Planners save regular venues and start a booking from them ("Book here" on the profile page, or "Use a saved place" in the wizard).
+- **Privacy.** A bilingual privacy policy at `/privacy`; fonts and map styles are served from the app's own domain.
 ## Engineering highlights
  
 | | |

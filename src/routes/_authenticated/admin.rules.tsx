@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { CrudTable } from "@/components/admin/CrudTable";
 import { ConfigForm } from "@/components/admin/ConfigForm";
+import { T } from "@/components/T";
 
 const RULE_TYPES = [
   { value: "never_same_day", label: "Never out on the same day" },
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/_authenticated/admin/rules")({
   head: () => ({ meta: [{ title: "Rules — TruckOps back office" }, { name: "description", content: "Crew, pairing and system rules." }] }),
   component: () => (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Rules</h1>
+      <h1 className="text-3xl font-semibold"><T>Rules</T></h1>
       <p className="flex items-start gap-2 text-sm text-muted-foreground">
         <Lock className="mt-0.5 size-4 shrink-0" />
-        Rules marked “System” come from Sabine's whiteboard. They are absolute: the database refuses any attempt to edit, disable or delete them, and both the live quote and the server booking check enforce them.
+        <T>{"Rules marked “System” come from Sabine's whiteboard. They are absolute: the database refuses any attempt to edit, disable or delete them, and both the live quote and the server booking check enforce them."}</T>
       </p>
       <ConfigForm title="Crew & diet rules" fields={[
         { path: "crew_max_hours", label: "Crew max hours per event (ArbZG §4: 30-min break after 6 h)", type: "number" },

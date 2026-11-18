@@ -21,7 +21,7 @@ export function YardsMap({ yards, radiusKm }: { yards: { id: string; name: strin
       const group: any[] = [];
       yards.filter((y) => y.status !== "closed").forEach((y) => {
         const c = L.circle([y.lat, y.lon], { radius: radiusKm * 1000, color: primary, weight: 2, fillOpacity: 0.08 }).addTo(map);
-        L.marker([y.lat, y.lon], { icon: L.divIcon({ className: "", html: `<div style="width:16px;height:16px;border-radius:9999px;background:${primary};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>` }) })
+        L.marker([y.lat, y.lon], { icon: L.divIcon({ className: "", iconSize: [16, 16], iconAnchor: [8, 8], html: `<div style="box-sizing:border-box;width:16px;height:16px;border-radius:9999px;background:${primary};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>` }) })
           .addTo(map)
           .bindTooltip(`${y.name} · ${radiusKm} km`, { permanent: true, direction: "top", offset: [0, -8] });
         group.push(c);

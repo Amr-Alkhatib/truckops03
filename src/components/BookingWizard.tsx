@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CalendarIcon, Check, ChevronLeft, ChevronRight, Copy, Download, Sparkles, Bookmark } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +21,7 @@ import { bookingSchema } from "@/lib/booking-schema";
 import { previewQuote, previewQuoteByToken, submitBooking, submitBookingByToken, type SubmitResult } from "@/lib/booking.functions";
 import { usePackages } from "@/hooks/use-packages";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
 import { buildQuote, eur, formatDateDE } from "@/lib/engine";
 import { makeContext as _m, todayISO } from "@/lib/data";
 import { downloadQuotePdf } from "@/lib/pdf";
@@ -100,8 +101,12 @@ function toPayload(f: Form) {
 
 export type PlannerLink = { token: string; label: string; company_name: string; billing_address: string };
 
-export function BookingWizard({ initialPackage, link }: { initialPackage?: string; link?: PlannerLink }) {
+export function BookingWizard({ initialPackage, initialPresetId, link }: { initialPackage?: string; initialPresetId?: string; link?: PlannerLink }) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const [presetOpen, setPresetOpen] = useState(false);
+  const [loadedPreset, setLoadedPreset] = useState<string | null>(null);
+  const presetApplied = useRef(false);
   const packagesQ = usePackages();
   const qc = useQueryClient();
   const [step, setStep] = useState(0);
@@ -133,10 +138,11 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
       return data;
     },
   });
+  // Only the signed-in planner's own places (staff could otherwise read everyone's).
   const presetsQ = useQuery({
-    enabled: !link,
-    queryKey: ["presets"],
-    queryFn: async () => (await supabase.from("event_presets").select("*").order("created_at", { ascending: false })).data ?? [],
+    enabled: !link && !!user,
+    queryKey: ["presets", user?.id],
+    queryFn: async () => (await supabase.from("event_presets").select("*").eq("user_id", user!.id).order("created_at", { ascending: false })).data ?? [],
   });
 
   useEffect(() => {
@@ -217,7 +223,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
     if (!r.success)
       for (const i of r.error.issues) {
         const k = String(i.path[0]);
-        if ((!fields || fields.includes(k)) && !errs[k]) errs[k] = i.message.startsWith("Required") || i.message.startsWith("Expected") ? "This field is required" : i.message;
+        if ((!fields || fields.includes(k)) && !errs[k]) errs[k] = i.message.startsWith("Required") || i.message.startsWith("Expected") || i.message.startsWith("Invalid input") ? "This field is required" : i.message;
       }
     if ((!fields || fields.includes("end_time")) && f.start_time && f.end_time && f.start_time === f.end_time) errs.end_time = "End time must differ from start time";
     if ((!fields || fields.includes("lat")) && (f.lat == null)) errs.address = "Pick an address from the suggestions so we can measure the road distance";
@@ -231,23 +237,23 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
   };
 
   const next = () => {
-    if (!validate(STEP_FIELDS[step])) return toast.error("Please complete the highlighted fields");
+    if (!validate(STEP_FIELDS[step])) return toast.error(t("Please complete the highlighted fields"));
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   const doSubmit = async () => {
-    if (!validate(null)) return toast.error("Some details are missing — please check each step");
+    if (!validate(null)) return toast.error(t("Some details are missing — please check each step"));
     setSubmitting(true);
     try {
       const res = await submit({ data: toPayload(f) as any });
       setResult(res);
       if (res.ok) {
-        toast.success(res.status === "confirmed" ? "Booking confirmed!" : res.status === "permit_check" ? "Booking received — permit check by our team" : "Sent for client approval");
+        toast.success(t(res.status === "confirmed" ? "Booking confirmed!" : res.status === "permit_check" ? "Booking received — permit check by our team" : "Sent for client approval"));
         qc.invalidateQueries({ queryKey: ["my-bookings"] });
-      } else if (res.leadCreated) toast.info("Our team will contact you about this location");
-      else toast.error(res.error ?? "This booking can't be processed yet");
+      } else if (res.leadCreated) toast.info(t("Our team will contact you about this location"));
+      else toast.error(t(res.error ?? "This booking can't be processed yet"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Something went wrong");
+      toast.error(e?.message ?? t("Something went wrong"));
     } finally {
       setSubmitting(false);
     }
@@ -261,8 +267,20 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
       start_time: pkgOf(x.package) ? x.start_time : p.start_time.slice(0, 5), end_time: pkgOf(x.package) ? x.end_time : p.end_time.slice(0, 5),
       guests: String(p.guests), vegan: String(p.vegan), gluten_free: String(p.gluten_free), halal: String(p.halal),
     }));
-    toast.success(`Loaded “${p.label}”`);
+    setErrors({});
+    setPresetOpen(false);
+    setLoadedPreset(p.label);
+    toast.success(t("Loaded “{label}”: venue, times and guests are filled in.", { label: p.label }));
   };
+
+  // /book?preset=<id> (from "Book here" on the profile page) loads that place once.
+  useEffect(() => {
+    if (presetApplied.current || !initialPresetId || !presetsQ.data) return;
+    const p = presetsQ.data.find((x) => x.id === initialPresetId);
+    presetApplied.current = true;
+    if (p) applyPreset(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPresetId, presetsQ.data]);
 
   if (result?.ok) return <SuccessView result={result} form={f} link={link} />;
 
@@ -272,15 +290,20 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
         <div>
           <h1 className="text-3xl font-semibold sm:text-4xl">{t("Book your food trucks")}</h1>
           <p className="text-muted-foreground">{link ? `${link.label} · ` : ""}{t("Every detail is required — your quote updates live.")}</p>
+          {loadedPreset && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Bookmark className="size-3" /> {t("Using your saved place “{label}”", { label: loadedPreset })}
+            </p>
+          )}
         </div>
         {presetsQ.data && presetsQ.data.length > 0 && (
-          <Popover>
-            <PopoverTrigger asChild><Button variant="glass"><Bookmark /> Use a saved place</Button></PopoverTrigger>
+          <Popover open={presetOpen} onOpenChange={setPresetOpen}>
+            <PopoverTrigger asChild><Button variant="glass"><Bookmark /> {t("Use a saved place")}</Button></PopoverTrigger>
             <PopoverContent align="end" className="w-80 p-2">
               {presetsQ.data.map((p) => (
                 <button key={p.id} className="w-full rounded-lg p-3 text-left hover:bg-accent" onClick={() => applyPreset(p)}>
                   <p className="font-medium">{p.label}</p>
-                  <p className="truncate text-xs text-muted-foreground">{p.venue_name} · {p.guests} guests</p>
+                  <p className="truncate text-xs text-muted-foreground">{p.venue_name} · {t("{n} guests", { n: p.guests })}</p>
                 </button>
               ))}
             </PopoverContent>
@@ -326,7 +349,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   <Field label="Event date" error={errors.event_date}>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start font-normal"><CalendarIcon />{f.event_date ? formatDateDE(f.event_date) : "TT.MM.JJJJ"}</Button>
+                        <Button variant="outline" className="w-full justify-start font-normal"><CalendarIcon />{f.event_date ? formatDateDE(f.event_date) : t("DD.MM.YYYY")}</Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar mode="single" weekStartsOn={1} disabled={{ before: new Date() }} selected={f.event_date ? new Date(f.event_date + "T12:00:00") : undefined}
@@ -340,7 +363,8 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   </div>
                   {cfg && f.start_time && f.end_time && quote && quote.durationHours > cfg.crew_max_hours && (
                     <p className="rounded-xl bg-warning/15 p-3 text-sm">
-                      Your event lasts {quote.durationHours.toFixed(1)} h. Our crews work max {cfg.crew_max_hours} h per event, so {cfg.second_crew_enabled ? `a second crew shift (${eur(cfg.second_crew_fee_per_truck)} per vehicle) is added.` : "this length can't be booked right now."}
+                      {t("Your event lasts {h} h. Our crews work max {max} h per event, so", { h: quote.durationHours.toFixed(1), max: cfg.crew_max_hours })}{" "}
+                      {cfg.second_crew_enabled ? t("a second crew shift ({fee} per vehicle) is added.", { fee: eur(cfg.second_crew_fee_per_truck) }) : t("this length can't be booked right now.")}
                     </p>
                   )}
                 </>
@@ -348,39 +372,39 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
 
               {step === 2 && (
                 <>
-                  <Field label="Venue name" error={errors.venue_name}><Input value={f.venue_name} onChange={(e) => set("venue_name", e.target.value)} placeholder="e.g. Campus Vaihingen, Building 3" /></Field>
+                  <Field label="Venue name" error={errors.venue_name}><Input value={f.venue_name} onChange={(e) => set("venue_name", e.target.value)} placeholder={t("e.g. Campus Vaihingen, Building 3")} /></Field>
                   <Field label="Venue address" error={errors.address || errors.town} hint={t("Address suggestions and the map come from OpenStreetMap.")}>
                     <AddressAutocomplete value={f.address} onType={(v) => setF((x) => ({ ...x, address: v, lat: null, lon: null, town: "", county: "", state: "" }))} onSelect={(r) => setF((x) => ({ ...x, address: r.label, lat: r.lat, lon: r.lon, town: r.town, county: r.county, state: r.state }))} />
                   </Field>
                   {cfg && (
                     <div className="space-y-2">
-                      <RouteMap depot={yr.nearest?.yard ?? staticQ.data!.yards[0]} dest={dest} geometry={routeQ.data?.geometry} />
-                      {routeQ.isFetching && <p className="text-xs text-muted-foreground">Measuring road distance…</p>}
+                      <RouteMap depot={yr.nearest?.yard ?? staticQ.data!.yards[0]} dest={dest} geometry={routeQ.data?.geometry} labels={{ depot: t("Depot"), venue: t("Venue") }} />
+                      {routeQ.isFetching && <p className="text-xs text-muted-foreground">{t("Measuring road distance…")}</p>}
                       {routeQ.data && (
                         <p className="text-sm">
                           {staticQ.data!.yards.filter((y) => y.status !== "closed").map((y, i) => (
-                            <span key={y.id}>{i > 0 && " · "}<strong>{yr.yardKm[y.id] != null ? `${Number(yr.yardKm[y.id]).toFixed(1)} km` : "?"}</strong> from our {y.name}{y.active_from && y.active_from > todayISO() ? ` (opens ${formatDateDE(y.active_from)})` : ""}</span>
+                            <span key={y.id}>{i > 0 && " · "}<strong>{yr.yardKm[y.id] != null ? `${Number(yr.yardKm[y.id]).toFixed(1)} km` : "?"}</strong> {t("from our {yard}", { yard: t(y.name) })}{y.active_from && y.active_from > todayISO() ? ` (${t("opens {date}", { date: formatDateDE(y.active_from) })})` : ""}</span>
                           ))}
-                          {" "}· town: <strong>{f.town || "unknown"}</strong>
+                          {" "}· {t("town")}: <strong>{f.town || t("unknown")}</strong>
                         </p>
                       )}
-                      {routeQ.isError && <p className="text-sm text-destructive">We couldn't measure the road distance. Try again shortly.</p>}
+                      {routeQ.isError && <p className="text-sm text-destructive">{t("We couldn't measure the road distance. Try again shortly.")}</p>}
                     </div>
                   )}
                   <Field label="Venue type" error={errors.venue_type}>
                     <div className="grid grid-cols-2 gap-2">
                       {([["public_ground", "Public ground"], ["private_campus", "Private company campus"]] as const).map(([v, l]) => (
-                        <button key={v} type="button" onClick={() => set("venue_type", v)} className={`rounded-xl border px-4 py-2.5 text-sm font-medium ${f.venue_type === v ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}>{l}</button>
+                        <button key={v} type="button" onClick={() => set("venue_type", v)} className={`rounded-xl border px-4 py-2.5 text-sm font-medium ${f.venue_type === v ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}>{t(l)}</button>
                       ))}
                     </div>
                   </Field>
                   <Field label="400V power available on site?" error={errors.has_400v}><YesNo value={f.has_400v} onChange={(v) => set("has_400v", v)} /></Field>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Overhead clearance (m)" error={errors.clearance_m}>
-                      <Input inputMode="decimal" disabled={f.no_clearance_limit} value={f.clearance_m} onChange={(e) => set("clearance_m", e.target.value)} placeholder="e.g. 3.5" />
-                      <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={f.no_clearance_limit} onChange={(e) => set("no_clearance_limit", e.target.checked)} /> No height limit (open air)</label>
+                      <Input inputMode="decimal" disabled={f.no_clearance_limit} value={f.clearance_m} onChange={(e) => set("clearance_m", e.target.value)} placeholder={t("e.g. 3.5")} />
+                      <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={f.no_clearance_limit} onChange={(e) => set("no_clearance_limit", e.target.checked)} /> {t("No height limit (open air)")}</label>
                     </Field>
-                    <Field label="Space available (m²)" error={errors.space_m2}><Input inputMode="decimal" value={f.space_m2} onChange={(e) => set("space_m2", e.target.value)} placeholder="e.g. 80" /></Field>
+                    <Field label="Space available (m²)" error={errors.space_m2}><Input inputMode="decimal" value={f.space_m2} onChange={(e) => set("space_m2", e.target.value)} placeholder={t("e.g. 80")} /></Field>
                   </div>
                 </>
               )}
@@ -391,7 +415,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   <Field label="Vegan guests" error={errors.vegan}><Input inputMode="numeric" value={f.vegan} onChange={(e) => set("vegan", e.target.value)} /></Field>
                   <Field label="Gluten-free guests" error={errors.gluten_free}><Input inputMode="numeric" value={f.gluten_free} onChange={(e) => set("gluten_free", e.target.value)} /></Field>
                   <Field label="Halal guests" error={errors.halal}><Input inputMode="numeric" value={f.halal} onChange={(e) => set("halal", e.target.value)} /></Field>
-                  <p className="text-xs text-muted-foreground sm:col-span-2">Enter 0 if none. We'll pick trucks that cover every diet.</p>
+                  <p className="text-xs text-muted-foreground sm:col-span-2">{t("Enter 0 if none. We'll pick trucks that cover every diet.")}</p>
                 </div>
               )}
 
@@ -400,9 +424,9 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                 <button type="button" onClick={() => set("espresso", !f.espresso)} className={`w-full rounded-2xl border p-6 text-left transition-all ${f.espresso ? "border-primary shadow-elegant" : "hover:border-primary/50"}`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold">☕ Espresso Express</h3>
-                    <span className="font-semibold">{cfg ? eur(cfg.espresso_price) : "…"} net</span>
+                    <span className="font-semibold">{cfg ? eur(cfg.espresso_price) : "…"} {t("net")}</span>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">Barista coffee bar, flat fee. Only together with at least one food truck. {f.espresso ? "✓ Added" : "Tap to add"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("Barista coffee bar, flat fee. Only together with at least one food truck.")} {f.espresso ? t("✓ Added") : t("Tap to add")}</p>
                 </button>
                 <Field label="Selling to the public without prior order?" hint="Normally no — corporate catering is pre-ordered. If yes, a Reisegewerbekarte (§55 GewO) is needed and Sundays/holidays are not possible.">
                   <YesNo value={f.sales_to_public} onChange={(v) => set("sales_to_public", v)} />
@@ -428,7 +452,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   </p>
                   {quote?.needsApproval && cfg && (
                     <div className="space-y-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                      <p className="text-sm">This order is above {eur(cfg.approval_threshold)} ({cfg.approval_basis}), so a second person at your company must approve it.</p>
+                      <p className="text-sm">{t("This order is above {amount} ({basis}), so a second person at your company must approve it.", { amount: eur(cfg.approval_threshold), basis: t(cfg.approval_basis) })}</p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <Field label="Approver name" error={errors.approver_name}><Input value={f.approver_name} onChange={(e) => set("approver_name", e.target.value)} /></Field>
                         <Field label="Approver email" error={errors.approver_email}><Input type="email" value={f.approver_email} onChange={(e) => set("approver_email", e.target.value)} /></Field>
@@ -440,19 +464,19 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
 
               {step === 6 && (
                 <div className="space-y-4 text-sm">
-                  <h2 className="text-2xl font-semibold">Review</h2>
+                  <h2 className="text-2xl font-semibold">{t("Review")}</h2>
                   <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
                     {[
                       ["Package", pkgOf(f.package)?.name ?? t("Custom event")],
                       ["Date", `${formatDateDE(f.event_date)}, ${f.start_time}–${f.end_time}`],
                       ["Venue", `${f.venue_name}, ${f.address}`],
-                      ["Venue type", f.venue_type === "public_ground" ? "Public ground" : "Private company campus"],
-                      ["Power / clearance / space", `${f.has_400v ? "400V" : "No 400V"} · ${f.no_clearance_limit ? "no height limit" : f.clearance_m + " m"} · ${f.space_m2} m²`],
-                      ["Guests", `${f.guests} (vegan ${f.vegan}, gluten-free ${f.gluten_free}, halal ${f.halal})`],
+                      ["Venue type", t(f.venue_type === "public_ground" ? "Public ground" : "Private company campus")],
+                      ["Power / clearance / space", `${f.has_400v ? "400V" : t("No 400V")} · ${f.no_clearance_limit ? t("no height limit") : f.clearance_m + " m"} · ${f.space_m2} m²`],
+                      ["Guests", t("{n} (vegan {v}, gluten-free {g}, halal {h})", { n: f.guests, v: f.vegan, g: f.gluten_free, h: f.halal })],
                       ["Company", `${f.company_name} · PO ${f.po_number}`],
                       ["Contact", `${f.contact_name} · ${f.contact_mobile}`],
                     ].map(([k, v]) => (
-                      <div key={k}><dt className="text-xs uppercase tracking-wider text-muted-foreground">{k}</dt><dd className="font-medium">{v}</dd></div>
+                      <div key={k}><dt className="text-xs uppercase tracking-wider text-muted-foreground">{t(k)}</dt><dd className="font-medium">{v}</dd></div>
                     ))}
                   </dl>
                   {shownQuote?.ok && shownQuote.alternatives.length > 0 && (
@@ -474,7 +498,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
                   )}
                   {result && !result.ok && (
                     <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-                      {result.leadCreated ? "We've passed your request to our team — they'll contact you about permits for this town." : result.error ?? "This booking can't be processed — see the issues in the quote panel."}
+                      {t(result.leadCreated ? "We've passed your request to our team — they'll contact you about permits for this town." : result.error ?? "This booking can't be processed — see the issues in the quote panel.")}
                     </div>
                   )}
                 </div>
@@ -487,7 +511,7 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
             {step < STEPS.length - 1 ? (
               <Button variant="hero" onClick={next}>{t("Continue")} <ChevronRight /></Button>
             ) : (
-              <Button variant="hero" onClick={doSubmit} disabled={submitting || !shownQuote?.ok}>{submitting ? "Submitting…" : shownQuote?.needsApproval ? "Send for approval" : "Confirm booking"}</Button>
+              <Button variant="hero" onClick={doSubmit} disabled={submitting || !shownQuote?.ok}>{t(submitting ? "Submitting…" : shownQuote?.needsApproval ? "Send for approval" : "Confirm booking")}</Button>
             )}
           </div>
         </section>
@@ -496,14 +520,14 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
           <div className="glass rounded-3xl p-6">
             <h2 className="mb-4 text-xl font-semibold">{t("Live quote")}</h2>
             {!f.event_date || !dest ? (
-              <p className="text-sm text-muted-foreground">Pick a date and venue address to see your quote.</p>
+              <p className="text-sm text-muted-foreground">{t("Pick a date and venue address to see your quote.")}</p>
             ) : (
               <QuoteSummary quote={shownQuote} loading={staticQ.isLoading || dateQ.isLoading || routeQ.isLoading} />
             )}
             {step === 6 && <p className="mt-3 text-xs text-muted-foreground">{serverQuote?.key === payloadKey ? t("Checked by our booking system.") : t("Checking with our booking system…")}</p>}
             {shownQuote && step === 6 && (
               <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => downloadQuotePdf({ ...toPayload(f), distance_km: routeQ.data!.km, distance_method: routeQ.data!.method } as any, shownQuote)}>
-                <Download /> Download quote PDF
+                <Download /> {t("Download quote PDF")}
               </Button>
             )}
           </div>
@@ -514,13 +538,14 @@ export function BookingWizard({ initialPackage, link }: { initialPackage?: strin
 }
 
 function SuccessView({ result, form, link: plannerLink }: { result: Extract<SubmitResult, { ok: true }>; form: Form; link?: PlannerLink }) {
+  const { t } = useI18n();
   const [saveOpen, setSaveOpen] = useState(false);
   const [label, setLabel] = useState("");
   const qc = useQueryClient();
   const link = result.approvalToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/approve/${result.approvalToken}` : null;
 
   const savePreset = async () => {
-    if (!label.trim()) return toast.error("Give your place a name");
+    if (!label.trim()) return toast.error(t("Give your place a name"));
     const { data: u } = await supabase.auth.getUser();
     const p = toPayload(form);
     const { error } = await supabase.from("event_presets").insert({
@@ -529,7 +554,7 @@ function SuccessView({ result, form, link: plannerLink }: { result: Extract<Subm
       end_time: form.end_time, guests: p.guests!, vegan: p.vegan!, gluten_free: p.gluten_free!, halal: p.halal!,
     });
     if (error) return toast.error(error.message);
-    toast.success("Saved to your places");
+    toast.success(t("Saved to your places"));
     qc.invalidateQueries({ queryKey: ["presets"] });
     setSaveOpen(false);
   };
@@ -538,34 +563,34 @@ function SuccessView({ result, form, link: plannerLink }: { result: Extract<Subm
     <main className="mx-auto max-w-2xl px-4 py-16">
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-8 text-center">
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground"><Check className="size-7" /></div>
-        <h1 className="mt-4 text-3xl font-semibold">{result.status === "confirmed" ? "Booking confirmed" : result.status === "permit_check" ? "Booking received — permit check" : "Awaiting client approval"}</h1>
-        {result.status === "permit_check" && <p className="mt-2 text-sm text-muted-foreground">Our team confirms the permit{result.routeNote ? " and the truck route clearance" : ""} before the booking is confirmed. {result.quote.permitReasons.join(" ")} {result.routeNote ?? ""}</p>}
-        <p className="mt-1 text-muted-foreground">Reference {result.ref} · {eur(result.quote.totalGross)} gross</p>
+        <h1 className="mt-4 text-3xl font-semibold">{t(result.status === "confirmed" ? "Booking confirmed" : result.status === "permit_check" ? "Booking received — permit check" : "Awaiting client approval")}</h1>
+        {result.status === "permit_check" && <p className="mt-2 text-sm text-muted-foreground">{t(result.routeNote ? "Our team confirms the permit and the truck route clearance before the booking is confirmed." : "Our team confirms the permit before the booking is confirmed.")} {result.quote.permitReasons.map((r) => t(r)).join(" ")} {result.routeNote ? t(result.routeNote) : ""}</p>}
+        <p className="mt-1 text-muted-foreground">{t("Reference {ref} · {total} gross", { ref: result.ref, total: eur(result.quote.totalGross) })}</p>
         {link && (
           <div className="mt-6 rounded-2xl border p-4 text-left">
-            <p className="text-sm">Send this link to <strong>{form.approver_name}</strong> ({form.approver_email}). They can accept or reject without an account.</p>
+            <p className="text-sm">{t("Send this link to {name} ({email}). They can accept or reject without an account.", { name: form.approver_name, email: form.approver_email })}</p>
             <div className="mt-3 flex gap-2">
               <Input readOnly value={link} className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }}><Copy /></Button>
+              <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(link); toast.success(t("Link copied")); }}><Copy /></Button>
             </div>
           </div>
         )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {plannerLink ? (
-            <Button variant="hero" onClick={() => window.location.reload()}>New booking</Button>
+            <Button variant="hero" onClick={() => window.location.reload()}>{t("New booking")}</Button>
           ) : (
             <>
-              <Button variant="hero" asChild><Link to="/bookings/$id" params={{ id: result.bookingId }}>View booking</Link></Button>
-              <Button variant="outline" onClick={() => setSaveOpen(true)}><Bookmark /> Save this as a preset</Button>
+              <Button variant="hero" asChild><Link to="/bookings/$id" params={{ id: result.bookingId }}>{t("View booking")}</Link></Button>
+              <Button variant="outline" onClick={() => setSaveOpen(true)}><Bookmark /> {t("Save this place")}</Button>
             </>
           )}
         </div>
       </motion.div>
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Save this place</DialogTitle></DialogHeader>
-          <Field label="Label"><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. HQ summer party" /></Field>
-          <Button variant="hero" onClick={savePreset}>Save preset</Button>
+          <DialogHeader><DialogTitle>{t("Save this place")}</DialogTitle></DialogHeader>
+          <Field label="Label"><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t("e.g. HQ summer party")} /></Field>
+          <Button variant="hero" onClick={savePreset}>{t("Save place")}</Button>
         </DialogContent>
       </Dialog>
     </main>

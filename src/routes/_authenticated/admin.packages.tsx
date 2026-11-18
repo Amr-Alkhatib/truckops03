@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudTable } from "@/components/admin/CrudTable";
+import { T } from "@/components/T";
 
 export const Route = createFileRoute("/_authenticated/admin/packages")({
   head: () => ({ meta: [{ title: "Packages — TruckOps back office" }, { name: "description", content: "Bookable event packages." }] }),
   component: () => (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Packages</h1>
-      <p className="text-sm text-muted-foreground">Packages appear as one-click choices in the booking form. Events longer than the crew limit get a second crew shift.</p>
+      <h1 className="text-3xl font-semibold"><T>Packages</T></h1>
+      <p className="text-sm text-muted-foreground"><T>Packages appear as one-click choices in the booking form. Events longer than the crew limit get a second crew shift.</T></p>
       <CrudTable
         table="packages" title="Packages" order="sort" replan={false}
         defaults={{ slug: "", name: "", description: "", start_time: "12:00", end_time: "16:00", bestseller: false, active: true, sort: 10 }}

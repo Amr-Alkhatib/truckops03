@@ -17,6 +17,7 @@ import { useReplan } from "@/hooks/use-replan";
 import { addDays, formatDateDE, planDay, yardOf, type TruckYard } from "@/lib/engine";
 import { makeContext, mapDayBooking, todayISO } from "@/lib/data";
 import { roadDistance } from "@/lib/geo";
+import { translate, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/yards")({
   head: () => ({ meta: [{ title: "Yards — TruckOps back office" }, { name: "description", content: "Yards, their trucks and truck moves." }] }),
@@ -27,6 +28,7 @@ type Move = { truckId: string; yardId: string };
 type Preview = { dates: string[]; reassigned: number; conflicts: number; lines: string[] };
 
 function YardsPage() {
+  const { t } = useI18n();
   const s = useStaticData();
   const today = todayISO();
   const [move, setMove] = useState<Move | null>(null);
@@ -42,7 +44,7 @@ function YardsPage() {
   if (!s.data) return <Skeleton className="h-96 rounded-3xl" />;
   const { yards, trucks, onboardingOpen, config } = s.data;
   const yardName = (id: string) => yards.find((y) => y.id === id)?.name ?? "?";
-  const truckName = (id: string) => trucks.find((t) => t.id === id)?.name ?? "?";
+  const truckName = (id: string) => trucks.find((tr) => tr.id === id)?.name ?? "?";
   const ctxToday = makeContext(s.data, { occupiedTruckIds: [], compliance: [], bookings: [], holidays: [] });
   // board shows where each truck is today, or its first future yard
   const homeOf = (truckId: string) => {
@@ -54,8 +56,8 @@ function YardsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">Yards</h1>
-      <p className="text-sm text-muted-foreground">Every truck leaves from its own yard. A truck is only sent to venues within {config.max_distance_km} km by road of its yard, and travel is charged per truck from its yard. Drag a truck to another yard (or use “Move”) — you'll see which bookings are affected before saving.</p>
+      <h1 className="text-3xl font-semibold">{t("Yards")}</h1>
+      <p className="text-sm text-muted-foreground">{t("Every truck leaves from its own yard. A truck is only sent to venues within {km} km by road of its yard, and travel is charged per truck from its yard. Drag a truck to another yard (or use “Move”) — you'll see which bookings are affected before saving.", { km: config.max_distance_km })}</p>
       <YardsMap yards={yards} radiusKm={config.max_distance_km} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -67,27 +69,27 @@ function YardsPage() {
             className={`glass rounded-3xl p-4 ${drag ? "ring-2 ring-primary/40" : ""}`}
           >
             <div className="mb-3 flex items-baseline justify-between gap-2">
-              <h2 className="text-lg font-semibold">{y.name}</h2>
-              <span className="text-xs text-muted-foreground">{y.status}{y.active_from ? ` · opens ${formatDateDE(y.active_from)}` : ""} · relief crews {y.relief_crews}</span>
+              <h2 className="text-lg font-semibold">{t(y.name)}</h2>
+              <span className="text-xs text-muted-foreground">{t(y.status)}{y.active_from ? ` · ${t("opens {date}", { date: formatDateDE(y.active_from) })}` : ""} · {t("relief crews {n}", { n: y.relief_crews })}</span>
             </div>
             <ul className="space-y-2">
-              {trucks.filter((t) => t.status !== "retired" && homeOf(t.id).yard === y.id).map((t) => {
-                const h = homeOf(t.id);
-                const onb = onboardingOpen.filter((o) => o.truck_id === t.id).length;
-                const next = (upcoming.data ?? []).filter((a) => a.truck_id === t.id).slice(0, 3).map((a) => formatDateDE(a.event_date));
+              {trucks.filter((tr) => tr.status !== "retired" && homeOf(tr.id).yard === y.id).map((tr) => {
+                const h = homeOf(tr.id);
+                const onb = onboardingOpen.filter((o) => o.truck_id === tr.id).length;
+                const next = (upcoming.data ?? []).filter((a) => a.truck_id === tr.id).slice(0, 3).map((a) => formatDateDE(a.event_date));
                 return (
-                  <li key={t.id} draggable onDragStart={() => setDrag(t.id)} onDragEnd={() => setDrag(null)} className="flex cursor-grab items-start gap-2 rounded-xl border bg-background/60 p-3 text-sm">
+                  <li key={tr.id} draggable onDragStart={() => setDrag(tr.id)} onDragEnd={() => setDrag(null)} className="flex cursor-grab items-start gap-2 rounded-xl border bg-background/60 p-3 text-sm">
                     <GripVertical className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{t.name} <span className="font-normal text-muted-foreground">· {t.cuisine}</span></p>
+                      <p className="font-medium">{tr.name} <span className="font-normal text-muted-foreground">· {t(tr.cuisine)}</span></p>
                       <p className="text-xs text-muted-foreground">
-                        {[t.vegan && "vegan", (t.vegetarian || t.vegan) && "vegetarian", t.gluten_free && "gluten-free", t.halal && "halal", t.is_addon && "add-on"].filter(Boolean).join(" · ") || "—"}
-                        {h.from && ` · from ${formatDateDE(h.from)}`}
-                        {onb > 0 && <span className="ml-1 rounded-full bg-warning/25 px-1.5 font-semibold">onboarding ({onb} open)</span>}
+                        {[tr.vegan && "vegan", (tr.vegetarian || tr.vegan) && "vegetarian", tr.gluten_free && "gluten-free", tr.halal && "halal", tr.is_addon && "add-on"].filter(Boolean).map((x) => t(x as string)).join(" · ") || "—"}
+                        {h.from && ` · ${t("from {date}", { date: formatDateDE(h.from) })}`}
+                        {onb > 0 && <span className="ml-1 rounded-full bg-warning/25 px-1.5 font-semibold">{t("onboarding ({n} open)", { n: onb })}</span>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{next.length ? `Next: ${next.join(", ")}` : "No upcoming bookings"}</p>
+                      <p className="text-xs text-muted-foreground">{next.length ? t("Next: {dates}", { dates: next.join(", ") }) : t("No upcoming bookings")}</p>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => setMove({ truckId: t.id, yardId: yards.find((x) => x.id !== y.id)?.id ?? y.id })}><ArrowRightLeft /> Move</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setMove({ truckId: tr.id, yardId: yards.find((x) => x.id !== y.id)?.id ?? y.id })}><ArrowRightLeft /> {t("Move")}</Button>
                   </li>
                 );
               })}
@@ -114,14 +116,14 @@ function YardsPage() {
       />
 
       <div className="glass rounded-3xl p-4 sm:p-6">
-        <h2 className="mb-3 text-xl font-semibold">Truck move history</h2>
+        <h2 className="mb-3 text-xl font-semibold">{t("Truck move history")}</h2>
         <table className="w-full text-sm">
-          <thead><tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="py-2">Truck</th><th>Yard</th><th>From</th><th>Until</th><th>By</th><th>Note</th></tr></thead>
+          <thead><tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="py-2">{t("Truck")}</th><th>{t("Yard")}</th><th>{t("From")}</th><th>{t("Until")}</th><th>{t("By")}</th><th>{t("Note")}</th></tr></thead>
           <tbody>
             {(history.data ?? []).map((h) => (
               <tr key={h.id} className="border-b last:border-0">
                 <td className="py-2">{truckName(h.truck_id)}</td><td>{yardName(h.yard_id)}</td><td>{formatDateDE(h.valid_from)}</td>
-                <td>{h.valid_to ? formatDateDE(h.valid_to) : "open"}</td><td>{h.moved_by}</td><td className="text-muted-foreground">{h.note}</td>
+                <td>{h.valid_to ? formatDateDE(h.valid_to) : t("open")}</td><td>{h.moved_by}</td><td className="text-muted-foreground">{h.note}</td>
               </tr>
             ))}
           </tbody>
@@ -140,6 +142,7 @@ function MoveDialog({ move, onClose, yards, truckName }: { move: Move; onClose: 
   const [note, setNote] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
+  const { t } = useI18n();
 
   const simulate = async () => {
     if (!s.data || !from) return;
@@ -173,12 +176,12 @@ function MoveDialog({ move, onClose, yards, truckName }: { move: Move; onClose: 
         if (p.changed.length || newConf.length) affected.push(d);
         reassigned += p.changed.length;
         conflicts += newConf.length;
-        for (const id of p.changed) lines.push(`${formatDateDE(d)}: re-assigned to ${p.assign[id].map(truckName).join(" + ")}`);
-        for (const c of newConf) lines.push(`${formatDateDE(d)}: would become Conflict — ${c.reason}`);
+        for (const id of p.changed) lines.push(`${formatDateDE(d)}: ${t("re-assigned to {trucks}", { trucks: p.assign[id].map(truckName).join(" + ") })}`);
+        for (const c of newConf) lines.push(`${formatDateDE(d)}: ${t("would become Conflict")} — ${t(c.reason)}`);
       }
       setPreview({ dates: affected.length ? affected : dates, reassigned, conflicts, lines });
     } catch (e: any) {
-      toast.error(e?.message ?? "Preview failed");
+      toast.error(e?.message ?? t("Preview failed"));
     } finally {
       setBusy(false);
     }
@@ -188,7 +191,7 @@ function MoveDialog({ move, onClose, yards, truckName }: { move: Move; onClose: 
     setBusy(true);
     const { error } = await supabase.rpc("move_truck_to_yard", { _truck: move.truckId, _yard: yardId, _from: from, _note: note });
     if (error) { setBusy(false); return toast.error(error.message); }
-    toast.success(`${truckName(move.truckId)} moves to ${yards.find((y) => y.id === yardId)?.name} from ${formatDateDE(from)}`);
+    toast.success(t("{truck} moves to {yard} from {date}", { truck: truckName(move.truckId), yard: t(yards.find((y) => y.id === yardId)?.name ?? ""), date: formatDateDE(from) }));
     qc.invalidateQueries();
     await replan(`${truckName(move.truckId)} moved to ${yards.find((y) => y.id === yardId)?.name}`, preview?.dates);
     setBusy(false);
@@ -198,25 +201,25 @@ function MoveDialog({ move, onClose, yards, truckName }: { move: Move; onClose: 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>Move {truckName(move.truckId)}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("Move {truck}", { truck: truckName(move.truckId) })}</DialogTitle></DialogHeader>
         <div className="grid gap-4">
           <Field label="To yard">
             <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={yardId} onChange={(e) => { setYardId(e.target.value); setPreview(null); }}>
-              {yards.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+              {yards.map((y) => <option key={y.id} value={y.id}>{t(y.name)}</option>)}
             </select>
           </Field>
           <Field label="Effective from"><DateInputDE value={from} onChange={(v) => { setFrom(v); setPreview(null); }} /></Field>
-          <Field label="Note"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. covers Heilbronn demand in November" /></Field>
+          <Field label="Note"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("e.g. covers Heilbronn demand in November")} /></Field>
           {preview && (
             <div className="rounded-xl border p-3 text-sm">
-              <p className="font-medium">{preview.reassigned + preview.conflicts === 0 ? "No upcoming bookings are affected." : `${preview.reassigned + preview.conflicts} upcoming booking(s) affected: ${preview.reassigned} re-assigned, ${preview.conflicts} would become Conflict.`}</p>
+              <p className="font-medium">{preview.reassigned + preview.conflicts === 0 ? t("No upcoming bookings are affected.") : t("{n} upcoming booking(s) affected: {r} re-assigned, {c} would become Conflict.", { n: preview.reassigned + preview.conflicts, r: preview.reassigned, c: preview.conflicts })}</p>
               <ul className="mt-2 max-h-40 list-disc space-y-0.5 overflow-y-auto pl-5 text-xs text-muted-foreground">{preview.lines.map((l) => <li key={l}>{l}</li>)}</ul>
             </div>
           )}
           {!preview ? (
-            <Button variant="hero" disabled={busy || !from} onClick={simulate}>{busy ? "Checking bookings…" : "Preview affected bookings"}</Button>
+            <Button variant="hero" disabled={busy || !from} onClick={simulate}>{t(busy ? "Checking bookings…" : "Preview affected bookings")}</Button>
           ) : (
-            <Button variant="hero" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save move and re-plan"}</Button>
+            <Button variant="hero" disabled={busy} onClick={save}>{t(busy ? "Saving…" : "Save move and re-plan")}</Button>
           )}
         </div>
       </DialogContent>

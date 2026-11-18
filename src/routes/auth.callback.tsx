@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthCard } from "@/components/AuthCard";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/callback")({
   ssr: false,
@@ -28,6 +29,7 @@ function friendly(code: string | null, desc: string | null) {
 }
 
 function Callback() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -67,12 +69,12 @@ function Callback() {
 
   if (error)
     return (
-      <AuthCard title="Link problem" subtitle={error}>
+      <AuthCard title={t("Link problem")} subtitle={t(error)}>
         <div className="space-y-3">
-          <Button asChild variant="hero" className="w-full"><Link to="/login">Sign in / resend confirmation</Link></Button>
-          <Button asChild variant="outline" className="w-full"><Link to="/forgot-password">Reset my password</Link></Button>
+          <Button asChild variant="hero" className="w-full"><Link to="/login">{t("Sign in / resend confirmation")}</Link></Button>
+          <Button asChild variant="outline" className="w-full"><Link to="/forgot-password">{t("Reset my password")}</Link></Button>
         </div>
       </AuthCard>
     );
-  return <AuthCard title="Confirming…" subtitle="One moment while we sign you in."><div className="h-2 w-full animate-pulse rounded bg-accent" /></AuthCard>;
+  return <AuthCard title={t("Confirming…")} subtitle={t("One moment while we sign you in.")}><div className="h-2 w-full animate-pulse rounded bg-accent" /></AuthCard>;
 }
